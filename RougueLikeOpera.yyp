@@ -46,6 +46,8 @@
     {"id":{"name":"movement_functions","path":"scripts/movement_functions/movement_functions.yy",},},
     {"id":{"name":"Sound1","path":"sounds/Sound1/Sound1.yy",},},
     {"id":{"name":"Sound2","path":"sounds/Sound2/Sound2.yy",},},
+    {"id":{"name":"Sound3","path":"sounds/Sound3/Sound3.yy",},},
+    {"id":{"name":"Sound4","path":"sounds/Sound4/Sound4.yy",},},
     {"id":{"name":"spr_1_black512_1_1000","path":"sprites/spr_1_black512_1_1000/spr_1_black512_1_1000.yy",},},
     {"id":{"name":"spr_2_black512_1_500","path":"sprites/spr_2_black512_1_500/spr_2_black512_1_500.yy",},},
     {"id":{"name":"spr_3_black512_1_250","path":"sprites/spr_3_black512_1_250/spr_3_black512_1_250.yy",},},
