@@ -1,0 +1,118 @@
+// Turn Manager - handles turn-based game flow
+current_turn = 0;
+turn_entities = [];
+turn_index = 0;
+game_state = "playing"; // "playing", "player_win", "player_lose"
+
+
+
+// Initialize turn order based on initiative
+initialize_turns = function() {
+    turn_entities = [];
+    
+    // Add player to turn order
+    with(obj_player) {
+        array_push(other.turn_entities, {
+            object_id: id,
+            initiative: init,
+            type: "player"
+        });
+    }
+    
+    // Add enemies to turn order
+    with(obj_enemy) {
+        array_push(other.turn_entities, {
+            object_id: id,
+            initiative: init,
+            type: "enemy"
+        });
+    }
+    
+    // Sort by initiative (highest first)
+    array_sort(turn_entities, function(a, b) {
+        return b.initiative - a.initiative;
+    });
+    
+    // Reset turn tracking
+    turn_index = 0;
+    current_turn = 1;
+    
+    // Set initial turn
+    if (array_length(turn_entities) > 0) {
+        set_active_entity();
+    }
+};
+
+// Set the active entity for current turn
+set_active_entity = function() {
+    // Reset all entities' turn flags
+    with(obj_player) {
+        is_myturn = false;
+        moves = moves_max;
+    }
+    with(obj_enemy) {
+        is_myturn = false;
+        moves = moves_max;
+    }
+    
+    // Set current entity as active
+    if (turn_index < array_length(turn_entities)) {
+        var current_entity = turn_entities[turn_index];
+        with(current_entity.object_id) {
+            is_myturn = true;
+            moves = moves_max;
+        }
+    }
+};
+
+// Advance to next turn
+next_turn = function() {
+    turn_index++;
+    
+    // If we've gone through all entities, start new round
+    if (turn_index >= array_length(turn_entities)) {
+        turn_index = 0;
+        current_turn++;
+        
+        // Clean up dead entities from turn order
+        var alive_entities = [];
+        for (var i = 0; i < array_length(turn_entities); i++) {
+            if (instance_exists(turn_entities[i].object_id)) {
+                array_push(alive_entities, turn_entities[i]);
+            }
+        }
+        turn_entities = alive_entities;
+    }
+    
+    // Check win/lose conditions
+    check_game_state();
+    
+    // Set next active entity if game is still playing
+    if (game_state == "playing" && array_length(turn_entities) > 0) {
+        set_active_entity();
+    }
+};
+
+// Check for win/lose conditions
+check_game_state = function() {
+    var player_alive = instance_exists(obj_player);
+    var enemies_alive = instance_number(obj_enemy) > 0;
+    
+    var old_state = game_state;
+    
+    if (!player_alive) {
+        game_state = "player_lose";
+    } else if (!enemies_alive) {
+        game_state = "player_win";
+    }
+    
+    // Log state changes
+    if (old_state != game_state) {
+        show_debug_message("Game state changed from " + string(old_state) + " to " + string(game_state));
+        show_debug_message("Player alive: " + string(player_alive) + ", Enemies alive: " + string(enemies_alive));
+    }
+};
+
+
+// Initialize the turn system
+initialize_turns();
