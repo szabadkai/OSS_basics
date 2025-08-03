@@ -1,8 +1,11 @@
+// Update smooth movement animation
+update_smooth_movement();
+
 // Player input handling - only process during player's turn and when game is playing
 var turn_manager = instance_find(obj_turn_manager, 0);
 var game_is_playing = (turn_manager != noone && turn_manager.game_state == "playing");
 
-if (is_myturn && moves > 0 && game_is_playing) {
+if (is_myturn && moves > 0 && game_is_playing && !is_animating) {
     var action_taken = false;
     
     // Movement/Attack input - try to move, attack if enemy is in the way

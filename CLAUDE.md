@@ -33,7 +33,7 @@ This is a GameMaker Studio project for a roguelike space opera game. The project
 
 ### Visual Design
 - Space-themed with layered starfield backgrounds
-- Grid-based layout with 64px grid
+- Grid-based layout with 32px grid
 - Multiple parallax background layers for depth
 - Ship sprites for player and enemies
 

@@ -1,5 +1,8 @@
-// Enemy AI - only act during enemy's turn
-if (is_myturn && moves > 0) {
+// Update smooth movement animation
+update_smooth_movement();
+
+// Enemy AI - only act during enemy's turn and when not animating
+if (is_myturn && moves > 0 && !is_animating) {
     var player = instance_find(obj_player, 0);
     
     if (player != noone) {

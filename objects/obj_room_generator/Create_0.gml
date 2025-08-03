@@ -1,5 +1,5 @@
 // Room Generator - spawns enemies randomly
-grid_size = 64;
+grid_size = global.grid_size;
 enemy_count = 5;
 
 // Generate random enemy positions
