@@ -2,7 +2,39 @@
 current_turn = 0;
 turn_entities = [];
 turn_index = 0;
-game_state = "playing"; // "playing", "player_win", "player_lose"
+game_state = "playing"; // "playing", "player_win", "player_lose", "upgrade_selection"
+
+// Initialize upgrade system
+if (!variable_global_exists("upgrades")) {
+    init_upgrade_system();
+}
+
+// Level progression system
+if (!variable_global_exists("current_level")) {
+    global.current_level = 1;
+}
+level_complete_timer = 0;
+level_complete_duration = 2.0; // Show victory message for 2 seconds
+
+// Upgrade selection system
+upgrade_selections = []; // Array of 2 upgrade options
+selected_upgrade = -1; // Which upgrade player has chosen (-1 = none yet)
+
+// Reset level to 1 (used on game restart/defeat)
+reset_level = function() {
+    global.current_level = 1;
+    
+    // Reset player upgrades
+    var player = instance_find(obj_player, 0);
+    if (player != noone) {
+        player.upgrades.thruster = noone;
+        player.upgrades.weapon = noone;
+        player.upgrades.shield = noone;
+        player.recalculate_stats();
+    }
+    
+    show_debug_message("Level and upgrades reset to starting state");
+};
 
 
 

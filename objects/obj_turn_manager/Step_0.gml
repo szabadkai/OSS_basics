@@ -1,14 +1,54 @@
 // Handle game state transitions
 if (game_state == "player_win") {
-    // Player won - regenerate room for new challenge
+    // Auto-advance to upgrade selection after brief victory display
+    level_complete_timer += 1 / room_speed;
+    
+    if (level_complete_timer >= level_complete_duration) {
+        // Switch to upgrade selection
+        upgrade_selections = get_upgrade_selection(global.current_level);
+        selected_upgrade = -1;
+        game_state = "upgrade_selection";
+        level_complete_timer = 0;
+        show_debug_message("Showing upgrade selection for level " + string(global.current_level));
+    }
+    
+    // Still allow manual advance with ENTER
     if (keyboard_check_pressed(vk_enter)) {
-        show_debug_message("Enter pressed - regenerating room (victory)");
-        game_restart();
+        level_complete_timer = level_complete_duration; // Skip to selection immediately
+    }
+} else if (game_state == "upgrade_selection") {
+    // Handle upgrade selection input
+    if (keyboard_check_pressed(ord("1")) && array_length(upgrade_selections) >= 1) {
+        selected_upgrade = 0;
+    } else if (keyboard_check_pressed(ord("2")) && array_length(upgrade_selections) >= 2) {
+        selected_upgrade = 1;
+    }
+    
+    // Apply selected upgrade and advance to next level
+    if (selected_upgrade >= 0) {
+        var player = instance_find(obj_player, 0);
+        if (player != noone) {
+            player.apply_upgrade(upgrade_selections[selected_upgrade]);
+        }
+        
+        global.current_level++;
+        show_debug_message("Advancing to level " + string(global.current_level));
+        
+        // Regenerate room with new level parameters
+        var room_gen = instance_find(obj_room_generator, 0);
+        if (room_gen != noone) {
+            room_gen.generate_enemies();
+        }
+        
+        // Reset game state
+        game_state = "playing";
+        initialize_turns();
     }
 } else if (game_state == "player_lose") {
-    // Player lost - regenerate room to try again
+    // Player lost - reset level and regenerate room to try again
     if (keyboard_check_pressed(vk_enter)) {
         show_debug_message("Enter pressed - regenerating room (defeat)");
+        reset_level();
         game_restart();
     }
 }
@@ -16,6 +56,7 @@ if (game_state == "player_win") {
 // R key restart - works anytime during gameplay
 if (keyboard_check_pressed(ord("R"))) {
     show_debug_message("R pressed - restarting game");
+    reset_level();
     game_restart();
 }
 

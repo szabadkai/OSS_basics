@@ -1,9 +1,38 @@
 // Room Generator - spawns enemies randomly
 grid_size = global.grid_size;
-enemy_count = 15;
+
+// Calculate level-based difficulty
+calculate_level_params = function() {
+    // Ensure global level exists
+    if (!variable_global_exists("current_level")) {
+        global.current_level = 1;
+    }
+    var level = global.current_level;
+    
+    // Enemy count scaling: start with 15, add 3 per level, cap at 25
+    var base_enemies = 15;
+    var enemies_per_level = 3;
+    var max_enemies = 25;
+    enemy_count = min(base_enemies + (level - 1) * enemies_per_level, max_enemies);
+    
+    // Enemy stat scaling
+    var hp_bonus = floor((level - 1) / 2); // +1 HP every 2 levels
+    var damage_bonus = floor((level - 1) / 3); // +1 damage every 3 levels
+    
+    enemy_base_hp = 1 + hp_bonus;
+    enemy_base_damage = 1 + damage_bonus;
+    
+    show_debug_message("Level " + string(level) + " params: " + string(enemy_count) + " enemies, " + string(enemy_base_hp) + " HP, " + string(enemy_base_damage) + " damage");
+};
+
+// Initialize level parameters
+calculate_level_params();
 
 // Generate random enemy positions
 generate_enemies = function() {
+    // Recalculate level parameters
+    calculate_level_params();
+    
     // Clear existing enemies first
     with(obj_enemy) {
         instance_destroy();
@@ -70,6 +99,13 @@ generate_enemies = function() {
             
             // Spawn enemy
             var enemy = instance_create_layer(world_x, world_y, "Instances", obj_enemy);
+            
+            // Apply level-based stat scaling
+            with(enemy) {
+                hp_max = other.enemy_base_hp;
+                hp = other.enemy_base_hp;
+                damage = other.enemy_base_damage;
+            }
             
             // Add position to occupied list
             array_push(occupied_positions, [grid_x, grid_y]);
