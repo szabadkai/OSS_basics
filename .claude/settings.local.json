@@ -4,7 +4,8 @@
       "Bash(where GameMakerStudio)",
       "Bash(cat:*)",
       "Bash(mkdir:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

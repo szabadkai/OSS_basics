@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"autotile_functions",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"autotile_functions",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

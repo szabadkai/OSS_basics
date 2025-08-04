@@ -1,6 +1,18 @@
 // Movement Functions for Grid-Based Movement
 
-// Check if a grid position is occupied by any entity
+// Check if a grid position has a tile (solid collision)
+function is_tile_at_position(grid_x, grid_y) {
+    var tiles_layer = layer_get_id("Tiles_1");
+    if (tiles_layer == -1) return false;
+    
+    var tilemap_id = layer_tilemap_get_id(tiles_layer);
+    if (tilemap_id == -1) return false;
+    
+    var tile_data = tilemap_get_at_pixel(tilemap_id, grid_x * grid_size, grid_y * grid_size);
+    return (tile_data != 0);
+}
+
+// Check if a grid position is occupied by any entity (for movement only)
 function is_grid_position_occupied(grid_x, grid_y, exclude_self = true) {
     // Check all entities that might occupy grid positions
     with (obj_player) {
@@ -9,12 +21,12 @@ function is_grid_position_occupied(grid_x, grid_y, exclude_self = true) {
         var entity_grid_x, entity_grid_y;
         if (is_animating) {
             // Use target position if animating
-            entity_grid_x = move_target_x;
-            entity_grid_y = move_target_y;
+            entity_grid_x = move_target_x div global.grid_size;
+            entity_grid_y = move_target_y div global.grid_size;
         } else {
             // Use current position
-            entity_grid_x = x;
-            entity_grid_y = y;
+            entity_grid_x = x div global.grid_size;
+            entity_grid_y = y div global.grid_size;
         }
         
         if (entity_grid_x == grid_x && entity_grid_y == grid_y) {
@@ -28,12 +40,12 @@ function is_grid_position_occupied(grid_x, grid_y, exclude_self = true) {
         var entity_grid_x, entity_grid_y;
         if (is_animating) {
             // Use target position if animating
-            entity_grid_x = move_target_x;
-            entity_grid_y = move_target_y;
+            entity_grid_x = move_target_x div global.grid_size;
+            entity_grid_y = move_target_y div global.grid_size;
         } else {
             // Use current position
-            entity_grid_x = x;
-            entity_grid_y = y;
+            entity_grid_x = x div global.grid_size;
+            entity_grid_y = y div global.grid_size;
         }
         
         if (entity_grid_x == grid_x && entity_grid_y == grid_y) {
@@ -44,31 +56,49 @@ function is_grid_position_occupied(grid_x, grid_y, exclude_self = true) {
     return false;
 }
 
+// Check if a grid position is blocked for movement (entities + tiles)
+function is_grid_position_blocked_for_movement(grid_x, grid_y, exclude_self = true) {
+    // First check for solid tiles
+    if (is_tile_at_position(grid_x, grid_y)) {
+        return true;
+    }
+    
+    // Then check for entities
+    return is_grid_position_occupied(grid_x, grid_y, exclude_self);
+}
+
 // Try to move an object in a direction
 // Returns true if movement was successful, false if blocked
 function try_move(move_x, move_y) {
-    var new_x = x + move_x * grid_size;
-    var new_y = y + move_y * grid_size;
+    var current_grid_x = x div global.grid_size;
+    var current_grid_y = y div global.grid_size;
+    var new_grid_x = current_grid_x + move_x;
+    var new_grid_y = current_grid_y + move_y;
+    
+    // Calculate world position (centered on grid)
+    var new_world_x = new_grid_x * global.grid_size + (global.grid_size / 2);
+    var new_world_y = new_grid_y * global.grid_size + (global.grid_size / 2);
     
     // Check if the new position is within room bounds
-    if (new_x < 0 || new_x >= room_width || new_y < 0 || new_y >= room_height) {
+    if (new_world_x < global.grid_size/2 || new_world_x >= room_width - global.grid_size/2 || 
+        new_world_y < global.grid_size/2 || new_world_y >= room_height - global.grid_size/2) {
         return false;
     }
     
-    // Check if target grid position is already occupied
-    if (is_grid_position_occupied(new_x, new_y, true)) {
+    // Check if target grid position is already occupied (tiles or entities)
+    if (is_grid_position_blocked_for_movement(new_grid_x, new_grid_y, true)) {
         return false;
     }
     
     // Movement successful - start smooth animation
-    start_smooth_movement(new_x, new_y);
+    start_smooth_movement(new_world_x, new_world_y);
     return true;
 }
 
-// Snap object to grid
+// Snap object to grid center
 function snap_to_grid() {
-    x = round(x / grid_size) * grid_size;
-    y = round(y / grid_size) * grid_size;
+    x = round(x / global.grid_size) * global.grid_size + (global.grid_size / 2);
+    y = round(y / global.grid_size) * global.grid_size + (global.grid_size / 2);
 }
 
 // Get direction from one object to another (for AI)
@@ -139,8 +169,14 @@ function ease_out_cubic(t) {
 // Try to move, but attack if there's an enemy in the way (player only)
 // Returns: 0 = blocked, 1 = moved, 2 = attacked
 function try_move_or_attack(move_x, move_y) {
-    var new_x = x + move_x * grid_size;
-    var new_y = y + move_y * grid_size;
+    var current_grid_x = x div global.grid_size;
+    var current_grid_y = y div global.grid_size;
+    var new_grid_x = current_grid_x + move_x;
+    var new_grid_y = current_grid_y + move_y;
+    
+    // Calculate world position (centered on grid)
+    var new_world_x = new_grid_x * global.grid_size + (global.grid_size / 2);
+    var new_world_y = new_grid_y * global.grid_size + (global.grid_size / 2);
     
     // Set player facing direction based on movement
     if (object_index == obj_player) {
@@ -156,13 +192,29 @@ function try_move_or_attack(move_x, move_y) {
     }
     
     // Check if the new position is within room bounds
-    if (new_x < 0 || new_x >= room_width || new_y < 0 || new_y >= room_height) {
+    if (new_world_x < global.grid_size/2 || new_world_x >= room_width - global.grid_size/2 || 
+        new_world_y < global.grid_size/2 || new_world_y >= room_height - global.grid_size/2) {
         return 0; // blocked by room bounds
+    }
+    
+    // Check for tiles at the target position (solid collision)
+    if (is_tile_at_position(new_grid_x, new_grid_y)) {
+        return 0; // blocked by tile
     }
     
     // Check for enemies at the target position
     if (object_index == obj_player) {
-        var enemy_at_target = instance_place(new_x, new_y, obj_enemy);
+        // Check for enemy at the target grid position
+        var enemy_at_target = noone;
+        with (obj_enemy) {
+            var enemy_grid_x = x div global.grid_size;
+            var enemy_grid_y = y div global.grid_size;
+            if (enemy_grid_x == new_grid_x && enemy_grid_y == new_grid_y) {
+                enemy_at_target = id;
+                break;
+            }
+        }
+        
         if (enemy_at_target != noone) {
             // Attack the enemy instead of moving
             enemy_at_target.hp -= damage;
@@ -182,7 +234,7 @@ function try_move_or_attack(move_x, move_y) {
         }
     }
     
-    // No enemy, try normal movement
+    // No enemy or tile, try normal movement
     if (try_move(move_x, move_y)) {
         return 1; // moved
     } else {

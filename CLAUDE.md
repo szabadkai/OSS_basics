@@ -37,6 +37,34 @@ This is a GameMaker Studio project for a roguelike space opera game. The project
 - Multiple parallax background layers for depth
 - Ship sprites for player and enemies
 
+## Architecture Overview
+
+### Manager System Pattern
+The game follows a manager-based architecture with dedicated objects handling different systems:
+- **Turn Manager** (`obj_turn_manager`): Controls initiative-based turn order, maintains game state, handles win/lose conditions
+- **UI Manager** (`obj_ui_manager`): Manages interface rendering and background music selection
+- **Room Generator** (`obj_room_generator`): Handles procedural enemy placement using grid-based positioning
+
+### Turn-Based Combat System
+Central game loop managed by `obj_turn_manager` with these key components:
+- Initiative system determining turn order (stored in `turn_entities` array)
+- Turn tracking with `current_turn` and `turn_index` variables
+- Game state management ("playing", "player_win", "player_lose")
+- Automatic cleanup of destroyed entities from turn order
+
+### Grid-Based Movement Architecture
+Movement system unified through `movement_functions.gml` script providing:
+- Grid collision detection with animation state awareness
+- Smooth interpolated movement between grid positions using easing functions
+- Combined movement/attack logic for player actions
+- AI pathfinding utilities for enemy behavior
+
+### Entity System
+All game entities (player/enemies) share common patterns:
+- Stats system: hp, damage, moves_max, init (initiative)
+- Turn state: is_myturn boolean, moves remaining counter
+- Animation state: is_animating, move timing variables
+
 ## Development Workflow
 
 ### Building and Running
@@ -57,6 +85,7 @@ GameMaker Studio projects are built and run through the GameMaker IDE:
 - Boolean flags prefixed with "is_" (e.g., `is_animating`, `is_myturn`)
 - Stats variables follow pattern: base_stat, max_stat, current_stat
 - Object naming uses obj_ prefix followed by descriptive name
+- Manager objects use function variables for complex logic (e.g., `initialize_turns = function()`)
 
 ### Game Logic Patterns
 - Create events initialize object properties and stats
@@ -64,6 +93,7 @@ GameMaker Studio projects are built and run through the GameMaker IDE:
 - Collision events manage object interactions
 - Draw events handle custom rendering (minimal usage currently)
 - Turn management through boolean flags and move counters
+- Cross-object communication via `with()` statements and `instance_find()`
 
 ## Important Notes
 - This is a GameMaker Studio project, not a traditional text-based codebase
@@ -75,6 +105,9 @@ GameMaker Studio projects are built and run through the GameMaker IDE:
 ## Code Best Practices
 - Always make sure that every reference to an outside object is acquired in the Create method
 - Only implement a feature if explicitly instructed
+- Use manager pattern for complex systems requiring cross-object coordination
+- Global variables prefixed with `global.` (e.g., `global.grid_size`, `global.Music`)
+- Manager references cached in Create events using `instance_find()`
 
 ## References
 - You can find reference to the framework https://manual.gamemaker.io/monthly/en/#t=Content.htm here
