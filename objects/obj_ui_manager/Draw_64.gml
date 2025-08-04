@@ -237,5 +237,40 @@ if (turn_manager != noone) {
          // Reset alignment
           draw_set_halign(fa_left);
           draw_set_valign(fa_top);
+          
+    } else if (turn_manager.game_state == "planet_landing_confirm") {
+        // Planet Landing Confirmation
+        draw_set_halign(fa_center);
+        draw_set_valign(fa_middle);
+
+        // Background box
+        draw_set_color(c_black);
+        draw_set_alpha(0.9);
+        draw_rectangle(center_x - 250, center_y - 100, center_x + 250, center_y + 100, false);
+
+        // Title
+        draw_set_alpha(1);
+        draw_set_color(c_orange);
+        draw_text_transformed(center_x, center_y - 60, "PLANET DETECTED", 2.2, 2.2, 0);
+        
+        draw_set_color(c_white);
+        draw_text_transformed(center_x, center_y - 30, "Land and explore the planet?", 1.4, 1.4, 0);
+        
+        // Description
+        draw_set_color(c_ltgray);
+        draw_text_transformed(center_x, center_y - 5, "You may find resources, crew, or danger", 1.1, 1.1, 0);
+
+        // Options
+        draw_set_color(c_lime);
+        draw_text_transformed(center_x - 80, center_y + 30, "[Y] Yes - Land", 1.3, 1.3, 0);
+        draw_set_color(c_red);
+        draw_text_transformed(center_x + 80, center_y + 30, "[N] No - Stay", 1.3, 1.3, 0);
+        
+        draw_set_color(c_yellow);
+        draw_text_transformed(center_x, center_y + 60, "Choose wisely - planet exploration uses time", 0.9, 0.9, 0);
+
+        // Reset alignment
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
       }
  }

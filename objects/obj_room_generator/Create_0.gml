@@ -28,13 +28,66 @@ calculate_level_params = function() {
 // Initialize level parameters
 calculate_level_params();
 
+// Spawn planet function
+spawn_planet = function(occupied_positions) {
+    var grid_size = global.grid_size;
+    var room_grid_width = room_width div grid_size;
+    var room_grid_height = room_height div grid_size;
+    
+    var planet_spawned = false;
+    var attempts = 0;
+    var max_attempts = 100;
+    
+    while (!planet_spawned && attempts < max_attempts) {
+        attempts++;
+        
+        // Generate random grid position
+        var grid_x = irandom(room_grid_width - 1);
+        var grid_y = irandom(room_grid_height - 1);
+        
+        // Calculate world position (centered on tile)
+        var world_x = grid_x * grid_size + (grid_size / 2);
+        var world_y = grid_y * grid_size + (grid_size / 2);
+        
+        // Check bounds
+        if (world_x < grid_size/2 || world_x >= room_width - grid_size/2 || 
+            world_y < grid_size/2 || world_y >= room_height - grid_size/2) {
+            continue;
+        }
+        
+        // Check if position is already occupied
+        var position_free = true;
+        for (var i = 0; i < array_length(occupied_positions); i++) {
+            if (occupied_positions[i][0] == grid_x && occupied_positions[i][1] == grid_y) {
+                position_free = false;
+                break;
+            }
+        }
+        
+        if (position_free) {
+            // Spawn planet
+            var planet = instance_create_layer(world_x, world_y, "Instances", obj_planet);
+            planet_spawned = true;
+            
+            show_debug_message("Spawned planet at grid(" + string(grid_x) + ", " + string(grid_y) + ") -> world(" + string(world_x) + ", " + string(world_y) + ")");
+        }
+    }
+    
+    if (!planet_spawned) {
+        show_debug_message("Warning: Failed to spawn planet after " + string(max_attempts) + " attempts");
+    }
+};
+
 // Generate random enemy positions
 generate_enemies = function() {
     // Recalculate level parameters
     calculate_level_params();
     
-    // Clear existing enemies first
+    // Clear existing enemies and planets first
     with(obj_enemy) {
+        instance_destroy();
+    }
+    with(obj_planet) {
         instance_destroy();
     }
     
@@ -118,6 +171,9 @@ generate_enemies = function() {
     if (spawned < enemy_count) {
         show_debug_message("Warning: Only spawned " + string(spawned) + " out of " + string(enemy_count) + " enemies");
     }
+    
+    // Spawn planet after enemies are placed
+    spawn_planet(occupied_positions);
     
     show_debug_message("Room generation complete. Spawned " + string(spawned) + " enemies in " + string(attempts) + " attempts");
 };

@@ -2,7 +2,7 @@
 current_turn = 0;
 turn_entities = [];
 turn_index = 0;
-game_state = "playing"; // "playing", "player_win", "player_lose", "upgrade_selection"
+game_state = "playing"; // "playing", "player_win", "player_lose", "upgrade_selection", "planet_landing_confirm", "planet_exploration"
 
 // Initialize upgrade system
 if (!variable_global_exists("upgrades")) {
@@ -20,6 +20,9 @@ level_complete_duration = 2.0; // Show victory message for 2 seconds
 upgrade_selections = []; // Array of 2 upgrade options
 selected_upgrade = -1; // Which upgrade player has chosen (-1 = none yet)
 
+// Planet landing confirmation system
+planet_landing_confirmed = false; // Whether player confirmed landing
+
 // Reset level to 1 (used on game restart/defeat)
 reset_level = function() {
     global.current_level = 1;
@@ -34,6 +37,15 @@ reset_level = function() {
     }
     
     show_debug_message("Level and upgrades reset to starting state");
+};
+
+// Trigger planet landing confirmation
+trigger_planet_landing = function() {
+    if (game_state == "playing") {
+        game_state = "planet_landing_confirm";
+        planet_landing_confirmed = false;
+        show_debug_message("Planet landing confirmation triggered");
+    }
 };
 
 
@@ -127,6 +139,11 @@ next_turn = function() {
 
 // Check for win/lose conditions
 check_game_state = function() {
+    // Only check win/lose conditions during actual combat
+    if (game_state != "playing") {
+        return;
+    }
+    
     var player_alive = instance_exists(obj_player);
     var enemies_alive = instance_number(obj_enemy) > 0;
     

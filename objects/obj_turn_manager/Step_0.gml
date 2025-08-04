@@ -44,6 +44,20 @@ if (game_state == "player_win") {
         game_state = "playing";
         initialize_turns();
     }
+} else if (game_state == "planet_landing_confirm") {
+    // Handle planet landing confirmation input
+    if (keyboard_check_pressed(ord("Y"))) {
+        // Yes - land on planet
+        planet_landing_confirmed = true;
+        game_state = "playing"; // Reset state before room transition
+        show_debug_message("Player confirmed planet landing");
+        room_goto(rm_planet_map);
+    } else if (keyboard_check_pressed(ord("N"))) {
+        // No - stay in space
+        planet_landing_confirmed = false;
+        game_state = "playing";
+        show_debug_message("Player declined planet landing - resuming space combat");
+    }
 } else if (game_state == "player_lose") {
     // Player lost - reset level and regenerate room to try again
     if (keyboard_check_pressed(vk_enter)) {
