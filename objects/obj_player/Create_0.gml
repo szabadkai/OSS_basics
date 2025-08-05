@@ -26,6 +26,10 @@ is_myturn = false;
 grid_size = global.grid_size;
 init = base_init;
 
+// Special abilities
+has_area_attack = false;
+has_regeneration = false;
+
 // Animation variables
 is_animating = false;
 move_start_x = 0;
@@ -67,6 +71,10 @@ recalculate_stats = function() {
     moves_max = base_moves_max;
     init = base_init;
     
+    // Reset special abilities
+    has_area_attack = false;
+    has_regeneration = false;
+    
     // Apply thruster upgrades
     if (upgrades.thruster != noone) {
         var effects = upgrades.thruster.effects;
@@ -84,6 +92,9 @@ recalculate_stats = function() {
         if (variable_struct_exists(effects, "damage_bonus")) {
             damage += effects.damage_bonus;
         }
+        if (variable_struct_exists(effects, "area_attack")) {
+            has_area_attack = effects.area_attack;
+        }
     }
     
     // Apply shield upgrades
@@ -91,6 +102,9 @@ recalculate_stats = function() {
         var effects = upgrades.shield.effects;
         if (variable_struct_exists(effects, "hp_bonus")) {
             hp_max += effects.hp_bonus;
+        }
+        if (variable_struct_exists(effects, "regen")) {
+            has_regeneration = true;
         }
     }
     

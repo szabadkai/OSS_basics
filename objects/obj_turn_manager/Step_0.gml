@@ -34,6 +34,16 @@ if (game_state == "player_win") {
         global.current_level++;
         show_debug_message("Advancing to level " + string(global.current_level));
         
+        // Apply regenerative healing if player has it
+        var player = instance_find(obj_player, 0);
+        if (player != noone && player.has_regeneration) {
+            var old_hp = player.hp;
+            player.hp = min(player.hp + 1, player.hp_max);
+            if (player.hp > old_hp) {
+                show_debug_message("Regenerative Hull healed player: " + string(old_hp) + " -> " + string(player.hp));
+            }
+        }
+        
         // Regenerate room with new level parameters
         var room_gen = instance_find(obj_room_generator, 0);
         if (room_gen != noone) {

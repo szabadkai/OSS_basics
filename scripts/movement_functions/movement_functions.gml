@@ -217,17 +217,21 @@ function try_move_or_attack(move_x, move_y) {
         
         if (enemy_at_target != noone) {
             // Attack the enemy instead of moving
-            enemy_at_target.hp -= damage;
+            if (has_area_attack && object_index == obj_player) {
+                // Chain Gun: Execute chain attack from upgrade system
+                execute_chain_gun_attack(enemy_at_target, damage);
+            } else {
+                // Normal single-target attack using damage function
+                // take_damage handles death animation internally now
+                enemy_at_target.take_damage(damage);
+            }
+            
             audio_play_sound(Sound2, 1, false);
-            // Check if enemy died
-            if (enemy_at_target.hp <= 0) {
-                instance_destroy(enemy_at_target);
-                
-                // Check for victory immediately
-                var turn_manager = instance_find(obj_turn_manager, 0);
-                if (turn_manager != noone) {
-                    turn_manager.check_game_state();
-                }
+            
+            // Check for victory immediately
+            var turn_manager = instance_find(obj_turn_manager, 0);
+            if (turn_manager != noone) {
+                turn_manager.check_game_state();
             }
             
             return 2; // attacked

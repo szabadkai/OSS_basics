@@ -175,3 +175,82 @@ function get_slot_color(slot_type) {
         default: return c_white;
     }
 }
+
+// Chain Gun attack - chains from initial target through connected enemies
+function execute_chain_gun_attack(initial_target, player_damage) {
+    if (!instance_exists(initial_target)) return 0;
+    
+    var enemies_hit = [initial_target];
+    var visited_positions = [];
+    var queue = [];
+    
+    // Get initial target position
+    var initial_grid_x = initial_target.x div global.grid_size;
+    var initial_grid_y = initial_target.y div global.grid_size;
+    
+    // Add initial target to queue and visited
+    array_push(queue, [initial_grid_x, initial_grid_y]);
+    array_push(visited_positions, [initial_grid_x, initial_grid_y]);
+    
+    // Cardinal directions only (up, down, left, right)
+    var chain_directions = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+    
+    // Chain through connected enemies using BFS
+    while (array_length(queue) > 0) {
+        var current_pos = queue[0];
+        array_delete(queue, 0, 1);
+        
+        var cur_x = current_pos[0];
+        var cur_y = current_pos[1];
+        
+        // Check all cardinal directions from current enemy
+        for (var d = 0; d < array_length(chain_directions); d++) {
+            var check_x = cur_x + chain_directions[d][0];
+            var check_y = cur_y + chain_directions[d][1];
+            
+            // Skip if already visited this position
+            var already_visited = false;
+            for (var v = 0; v < array_length(visited_positions); v++) {
+                if (visited_positions[v][0] == check_x && visited_positions[v][1] == check_y) {
+                    already_visited = true;
+                    break;
+                }
+            }
+            
+            if (!already_visited) {
+                // Check if there's an enemy at this position
+                with (obj_enemy) {
+                    var enemy_grid_x = x div global.grid_size;
+                    var enemy_grid_y = y div global.grid_size;
+                    if (enemy_grid_x == check_x && enemy_grid_y == check_y) {
+                        // Found connected enemy, add to chain
+                        var already_in_chain = false;
+                        for (var j = 0; j < array_length(enemies_hit); j++) {
+                            if (enemies_hit[j] == id) {
+                                already_in_chain = true;
+                                break;
+                            }
+                        }
+                        if (!already_in_chain) {
+                            array_push(enemies_hit, id);
+                            array_push(queue, [check_x, check_y]);
+                            array_push(visited_positions, [check_x, check_y]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Damage all chained enemies using their take_damage function
+    show_debug_message("Chain Gun chained through " + string(array_length(enemies_hit)) + " enemies");
+    for (var i = 0; i < array_length(enemies_hit); i++) {
+        var enemy = enemies_hit[i];
+        if (instance_exists(enemy)) {
+            // take_damage handles death animation internally now
+            enemy.take_damage(player_damage);
+        }
+    }
+    
+    return array_length(enemies_hit);
+}
