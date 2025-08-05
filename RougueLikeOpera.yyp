@@ -52,6 +52,7 @@
     {"id":{"name":"rm_space_rouglite","path":"rooms/rm_space_rouglite/rm_space_rouglite.yy",},},
     {"id":{"name":"autotile_functions","path":"scripts/autotile_functions/autotile_functions.yy",},},
     {"id":{"name":"movement_functions","path":"scripts/movement_functions/movement_functions.yy",},},
+    {"id":{"name":"planet_system","path":"scripts/planet_system/planet_system.yy",},},
     {"id":{"name":"upgrade_system","path":"scripts/upgrade_system/upgrade_system.yy",},},
     {"id":{"name":"Sound1","path":"sounds/Sound1/Sound1.yy",},},
     {"id":{"name":"Sound2","path":"sounds/Sound2/Sound2.yy",},},

@@ -272,5 +272,197 @@ if (turn_manager != noone) {
         // Reset alignment
         draw_set_halign(fa_left);
         draw_set_valign(fa_top);
+        
+    } else if (turn_manager.game_state == "planet_exploration") {
+        // Planet Exploration Info Panel
+        draw_set_color(c_white);
+        draw_set_font(-1);
+        
+        var info_margin = 16;
+        var info_line_height = 18;
+        var info_y = info_margin;
+        
+        // Get planet information
+        if (variable_global_exists("current_planet")) {
+            var planet = global.current_planet;
+            
+            // Calculate backdrop height precisely based on actual content
+            var backdrop_height = 12; // Small base padding
+            
+            // Planet name height (accounting for wrapping)
+            if (string_length(planet.data.name) > 15) {
+                backdrop_height += 2 * info_line_height; // Two lines for wrapped name
+            } else {
+                backdrop_height += info_line_height; // Single line
+            }
+            backdrop_height += 4; // Extra spacing after name
+            
+            // Planet type height (accounting for wrapping)
+            var planet_type_text = planet.data.type_data.name;
+            if (string_length(planet_type_text) > 20) {
+                backdrop_height += 2 * info_line_height; // Two lines for wrapped type
+            } else {
+                backdrop_height += info_line_height; // Single line
+            }
+            
+            // Level line
+            backdrop_height += info_line_height;
+            
+            // Resource pools section
+            if (variable_struct_exists(planet.data, "resource_pools")) {
+                var pools = planet.data.resource_pools;
+                var pool_names = struct_get_names(pools);
+                backdrop_height += (array_length(pool_names) + 1) * info_line_height; // +1 for "Resource Pools:" header
+            }
+            
+            // Controls section
+            backdrop_height += 8 + info_line_height; // "Controls:" header with spacing
+            backdrop_height += info_line_height; // "B - Return to Space"
+            backdrop_height += 2 * info_line_height; // "Explore the surface..." (always wraps)
+            backdrop_height += 8; // Bottom padding
+            
+            // Planet header with precisely sized background
+            var backdrop_width = 240; // More compact width
+            draw_set_color(c_black);
+            draw_set_alpha(0.7);
+            draw_rectangle(info_margin - 8, info_y - 4, info_margin + backdrop_width, info_y + backdrop_height, false);
+            draw_set_alpha(1);
+            
+            // Planet name and type (with text wrapping)
+            var biome_config = get_biome_config(planet.data.type_data.biome);
+            draw_set_color(biome_config.color);
+            
+            // Wrap planet name if too long (max ~15 characters for 1.4 scale)
+            var planet_name = planet.data.name;
+            if (string_length(planet_name) > 15) {
+                var words = string_split(planet_name, " ");
+                var line1 = "";
+                var line2 = "";
+                var char_count = 0;
+                
+                for (var i = 0; i < array_length(words); i++) {
+                    if (char_count + string_length(words[i]) <= 15) {
+                        line1 += words[i] + " ";
+                        char_count += string_length(words[i]) + 1;
+                    } else {
+                        line2 += words[i] + " ";
+                    }
+                }
+                
+                draw_text_transformed(info_margin, info_y, string_trim(line1), 1.4, 1.4, 0);
+                info_y += info_line_height;
+                if (string_length(line2) > 0) {
+                    draw_text_transformed(info_margin, info_y, string_trim(line2), 1.4, 1.4, 0);
+                    info_y += info_line_height;
+                }
+            } else {
+                draw_text_transformed(info_margin, info_y, planet_name, 1.4, 1.4, 0);
+                info_y += info_line_height;
+            }
+            info_y += 4; // Extra spacing after name
+            
+            draw_set_color(c_ltgray);
+            var planet_type_text = planet.data.type_data.name;
+            // Wrap planet type if too long
+            if (string_length(planet_type_text) > 20) {
+                var type_words = string_split(planet_type_text, " ");
+                var type_line1 = "";
+                var type_line2 = "";
+                var type_char_count = 0;
+                
+                for (var j = 0; j < array_length(type_words); j++) {
+                    if (type_char_count + string_length(type_words[j]) <= 20) {
+                        type_line1 += type_words[j] + " ";
+                        type_char_count += string_length(type_words[j]) + 1;
+                    } else {
+                        type_line2 += type_words[j] + " ";
+                    }
+                }
+                
+                draw_text(info_margin, info_y, string_trim(type_line1));
+                info_y += info_line_height;
+                if (string_length(type_line2) > 0) {
+                    draw_text(info_margin, info_y, string_trim(type_line2));
+                    info_y += info_line_height;
+                }
+            } else {
+                draw_text(info_margin, info_y, planet_type_text);
+                info_y += info_line_height;
+            }
+            
+            // Level and difficulty
+            draw_set_color(c_yellow);
+            draw_text(info_margin, info_y, "Level: " + string(planet.data.level));
+            info_y += info_line_height;
+            
+            // Resource potential
+            draw_set_color(c_white);
+            draw_text(info_margin, info_y, "Resource Pools:");
+            info_y += info_line_height;
+            
+            if (variable_struct_exists(planet.data, "resource_pools")) {
+                var pools = planet.data.resource_pools;
+                var pool_names = struct_get_names(pools);
+                
+                for (var i = 0; i < array_length(pool_names); i++) {
+                    var resource_name = pool_names[i];
+                    var amount = pools[$ resource_name];
+                    
+                    // Color code by resource type
+                    switch (resource_name) {
+                        case "fuel": draw_set_color(c_orange); break;
+                        case "materials": draw_set_color(c_silver); break;
+                        case "intel": draw_set_color(c_aqua); break;
+                        case "crew": draw_set_color(c_lime); break;
+                        default: draw_set_color(c_white); break;
+                    }
+                    
+                    draw_text(info_margin + 12, info_y, string_upper(string_char_at(resource_name, 1)) + string_copy(resource_name, 2, string_length(resource_name)) + ": " + string(amount));
+                    info_y += info_line_height;
+                }
+            }
+            
+            // Controls
+            draw_set_color(c_yellow);
+            draw_text(info_margin, info_y + 8, "Controls:");
+            info_y += info_line_height + 8;
+            
+            draw_set_color(c_ltgray);
+            draw_text(info_margin, info_y, "B - Return to Space");
+            info_y += info_line_height;
+            
+            // Wrap the exploration text (limit to ~18 characters)
+            var explore_text = "Explore the surface for resources";
+            if (string_length(explore_text) > 18) {
+                var explore_words = string_split(explore_text, " ");
+                var explore_line1 = "";
+                var explore_line2 = "";
+                var explore_char_count = 0;
+                
+                for (var k = 0; k < array_length(explore_words); k++) {
+                    if (explore_char_count + string_length(explore_words[k]) <= 18) {
+                        explore_line1 += explore_words[k] + " ";
+                        explore_char_count += string_length(explore_words[k]) + 1;
+                    } else {
+                        explore_line2 += explore_words[k] + " ";
+                    }
+                }
+                
+                draw_text(info_margin, info_y, string_trim(explore_line1));
+                info_y += info_line_height;
+                if (string_length(explore_line2) > 0) {
+                    draw_text(info_margin, info_y, string_trim(explore_line2));
+                }
+            } else {
+                draw_text(info_margin, info_y, explore_text);
+            }
+        } else {
+            // Fallback if no planet data
+            draw_set_color(c_white);
+            draw_text(info_margin, info_y, "Planet Exploration");
+            info_y += info_line_height;
+            draw_set_color(c_ltgray);
+            draw_text(info_margin, info_y, "B - Return to Space");
+        }
       }
  }

@@ -159,10 +159,11 @@ spawn_planet = function(occupied_positions) {
             // Spawn planet
             var planet = instance_create_layer(world_x, world_y, "Instances", obj_planet);
             
-            // Set planet level based on current game level
-            with(planet) {
-                level = global.current_level;
-                image_index = level;
+            // Store planet data globally for planet map room access
+            with (planet) {
+                global.current_planet = {
+                    data: planet_data
+                };
             }
             
             planet_spawned = true;

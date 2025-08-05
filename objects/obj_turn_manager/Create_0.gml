@@ -9,6 +9,11 @@ if (!variable_global_exists("upgrades")) {
     init_upgrade_system();
 }
 
+// Initialize planet system
+if (!variable_global_exists("planet_types")) {
+    init_planet_system();
+}
+
 // Level progression system
 if (!variable_global_exists("current_level")) {
     global.current_level = 1;

@@ -6,7 +6,8 @@
       "Bash(mkdir:*)",
       "Bash(ls:*)",
       "WebFetch(domain:github.com)",
-      "Bash(printf '\\a')"
+      "Bash(printf '\\a')",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
