@@ -28,6 +28,96 @@ calculate_level_params = function() {
 // Initialize level parameters
 calculate_level_params();
 
+// Check if a position is reachable from the player using simple pathfinding
+is_position_reachable = function(target_grid_x, target_grid_y, occupied_positions) {
+    var player = instance_find(obj_player, 0);
+    if (player == noone) return false;
+    
+    var player_grid_x = player.x div grid_size;
+    var player_grid_y = player.y div grid_size;
+    
+    // If target is the same as player position, it's reachable
+    if (target_grid_x == player_grid_x && target_grid_y == player_grid_y) {
+        return true;
+    }
+    
+    // Simple flood fill to check reachability
+    var room_grid_width = room_width div grid_size;
+    var room_grid_height = room_height div grid_size;
+    var visited = [];
+    var queue = [];
+    
+    // Initialize visited array
+    for (var i = 0; i < room_grid_width; i++) {
+        visited[i] = [];
+        for (var j = 0; j < room_grid_height; j++) {
+            visited[i][j] = false;
+        }
+    }
+    
+    // Mark occupied positions as visited (blocked)
+    for (var k = 0; k < array_length(occupied_positions); k++) {
+        var occ_x = occupied_positions[k][0];
+        var occ_y = occupied_positions[k][1];
+        if (occ_x >= 0 && occ_x < room_grid_width && occ_y >= 0 && occ_y < room_grid_height) {
+            visited[occ_x][occ_y] = true;
+        }
+    }
+    
+    // Also mark tile positions as blocked
+    var tiles_layer = layer_get_id("Tiles_1");
+    if (tiles_layer != -1) {
+        var tilemap_id = layer_tilemap_get_id(tiles_layer);
+        if (tilemap_id != -1) {
+            for (var tx = 0; tx < room_grid_width; tx++) {
+                for (var ty = 0; ty < room_grid_height; ty++) {
+                    var tile_data = tilemap_get_at_pixel(tilemap_id, tx * grid_size, ty * grid_size);
+                    if (tile_data != 0) {
+                        visited[tx][ty] = true;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Start BFS from player position
+    array_push(queue, [player_grid_x, player_grid_y]);
+    visited[player_grid_x][player_grid_y] = true;
+    
+    // Directions: up, down, left, right
+    var directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    
+    while (array_length(queue) > 0) {
+        var current = queue[0];
+        array_delete(queue, 0, 1);
+        
+        var cur_x = current[0];
+        var cur_y = current[1];
+        
+        // Check if we reached the target
+        if (cur_x == target_grid_x && cur_y == target_grid_y) {
+            return true;
+        }
+        
+        // Explore neighbors
+        for (var d = 0; d < array_length(directions); d++) {
+            var new_x = cur_x + directions[d][0];
+            var new_y = cur_y + directions[d][1];
+            
+            // Check bounds
+            if (new_x >= 0 && new_x < room_grid_width && new_y >= 0 && new_y < room_grid_height) {
+                // Check if not visited and not blocked
+                if (!visited[new_x][new_y]) {
+                    visited[new_x][new_y] = true;
+                    array_push(queue, [new_x, new_y]);
+                }
+            }
+        }
+    }
+    
+    return false; // Target not reachable
+};
+
 // Spawn planet function
 spawn_planet = function(occupied_positions) {
     var grid_size = global.grid_size;
@@ -36,7 +126,7 @@ spawn_planet = function(occupied_positions) {
     
     var planet_spawned = false;
     var attempts = 0;
-    var max_attempts = 100;
+    var max_attempts = 200; // Increased attempts due to reachability check
     
     while (!planet_spawned && attempts < max_attempts) {
         attempts++;
@@ -64,17 +154,74 @@ spawn_planet = function(occupied_positions) {
             }
         }
         
-        if (position_free) {
+        // Check if position is reachable from player
+        if (position_free && is_position_reachable(grid_x, grid_y, occupied_positions)) {
             // Spawn planet
             var planet = instance_create_layer(world_x, world_y, "Instances", obj_planet);
+            
+            // Set planet level based on current game level
+            with(planet) {
+                level = global.current_level;
+                image_index = level;
+            }
+            
             planet_spawned = true;
             
-            show_debug_message("Spawned planet at grid(" + string(grid_x) + ", " + string(grid_y) + ") -> world(" + string(world_x) + ", " + string(world_y) + ")");
+            show_debug_message("Spawned reachable planet (level " + string(global.current_level) + ") at grid(" + string(grid_x) + ", " + string(grid_y) + ") -> world(" + string(world_x) + ", " + string(world_y) + ")");
+        } else if (position_free) {
+            show_debug_message("Position (" + string(grid_x) + ", " + string(grid_y) + ") is free but not reachable - trying another location");
         }
     }
     
     if (!planet_spawned) {
-        show_debug_message("Warning: Failed to spawn planet after " + string(max_attempts) + " attempts");
+        show_debug_message("Warning: Failed to spawn reachable planet after " + string(max_attempts) + " attempts");
+        // As fallback, try to spawn in an adjacent position to player
+        var player = instance_find(obj_player, 0);
+        if (player != noone) {
+            var player_grid_x = player.x div grid_size;
+            var player_grid_y = player.y div grid_size;
+            var fallback_positions = [
+                [player_grid_x + 1, player_grid_y],
+                [player_grid_x - 1, player_grid_y],
+                [player_grid_x, player_grid_y + 1],
+                [player_grid_x, player_grid_y - 1],
+                [player_grid_x + 1, player_grid_y + 1],
+                [player_grid_x - 1, player_grid_y - 1],
+                [player_grid_x + 1, player_grid_y - 1],
+                [player_grid_x - 1, player_grid_y + 1]
+            ];
+            
+            for (var f = 0; f < array_length(fallback_positions); f++) {
+                var fb_x = fallback_positions[f][0];
+                var fb_y = fallback_positions[f][1];
+                
+                // Check bounds and availability
+                if (fb_x >= 0 && fb_x < room_grid_width && fb_y >= 0 && fb_y < room_grid_height) {
+                    var fb_free = true;
+                    for (var j = 0; j < array_length(occupied_positions); j++) {
+                        if (occupied_positions[j][0] == fb_x && occupied_positions[j][1] == fb_y) {
+                            fb_free = false;
+                            break;
+                        }
+                    }
+                    
+                    if (fb_free) {
+                        var fb_world_x = fb_x * grid_size + (grid_size / 2);
+                        var fb_world_y = fb_y * grid_size + (grid_size / 2);
+                        var planet = instance_create_layer(fb_world_x, fb_world_y, "Instances", obj_planet);
+                        
+                        // Set planet level based on current game level
+                        with(planet) {
+                            level = global.current_level;
+                            image_index = level;
+                        }
+                        
+                        show_debug_message("Fallback: Spawned planet (level " + string(global.current_level) + ") adjacent to player at grid(" + string(fb_x) + ", " + string(fb_y) + ")");
+                        break;
+                    }
+                }
+            }
+        }
     }
 };
 
