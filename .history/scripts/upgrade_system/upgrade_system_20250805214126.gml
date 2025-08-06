@@ -293,23 +293,14 @@ function execute_chain_gun_attack(initial_target, player_damage) {
         }
     }
     
-    // Create visual effects and damage all chained enemies
+    // Damage all chained enemies using their take_damage function with critical hit chance
     show_debug_message("Chain Gun chained through " + string(array_length(enemies_hit)) + " enemies");
-    
-    // Get player position for projectile effects
-    var player = instance_find(obj_player, 0);
-    if (player != noone) {
-        // Create multiple projectiles for chain effect
-        for (var i = 0; i < array_length(enemies_hit); i++) {
-            var enemy = enemies_hit[i];
-            if (instance_exists(enemy)) {
-                // Each enemy in chain has independent crit chance
-                var crit_result = calculate_critical_hit(player_damage, 10);
-                
-                // Create projectile effect with slight delay for each target
-                var delay_timer = i * 0.05; // 50ms delay between each shot
-                create_projectile(player.x, player.y, enemy.x, enemy.y, enemy, crit_result.damage, crit_result.is_critical, "laser");
-            }
+    for (var i = 0; i < array_length(enemies_hit); i++) {
+        var enemy = enemies_hit[i];
+        if (instance_exists(enemy)) {
+            // Each enemy in chain has independent crit chance
+            var crit_result = calculate_critical_hit(player_damage, 10);
+            enemy.take_damage(crit_result.damage, crit_result.is_critical);
         }
     }
     
@@ -341,16 +332,6 @@ function execute_shotgun_attack(weapon_upgrade) {
         }
     }
     with (obj_enemy_heavy) {
-        if (other.is_target_in_cone(x div global.grid_size, y div global.grid_size)) {
-            var distance = max(abs((x div global.grid_size) - (other.x div global.grid_size)), 
-                             abs((y div global.grid_size) - (other.y div global.grid_size)));
-            if (distance <= weapon_upgrade.effects.max_range) {
-                array_push(enemies_hit, id);
-            }
-        }
-    }
-    with (obj_asteroid) {
-        if (is_destroyed) continue;
         if (other.is_target_in_cone(x div global.grid_size, y div global.grid_size)) {
             var distance = max(abs((x div global.grid_size) - (other.x div global.grid_size)), 
                              abs((y div global.grid_size) - (other.y div global.grid_size)));
@@ -415,35 +396,9 @@ function execute_railgun_attack(initial_target, weapon_upgrade) {
             break;
         }
         
-        // Check for tile or asteroid blocking the line
+        // Check for tile blocking the line
         if (is_tile_at_position(check_x, check_y)) {
             break; // Rail gun stops at walls
-        }
-        
-        // Check for asteroids blocking the line
-        var asteroid_blocks = false;
-        with (obj_asteroid) {
-            if (is_destroyed) continue;
-            var asteroid_grid_x = x div global.grid_size;
-            var asteroid_grid_y = y div global.grid_size;
-            if (asteroid_grid_x == check_x && asteroid_grid_y == check_y) {
-                asteroid_blocks = true;
-                // Rail gun can damage asteroids but stops after hitting them
-                var already_hit = false;
-                for (var k = 0; k < array_length(enemies_hit); k++) {
-                    if (enemies_hit[k] == id) {
-                        already_hit = true;
-                        break;
-                    }
-                }
-                if (!already_hit) {
-                    array_push(enemies_hit, id);
-                }
-                break;
-            }
-        }
-        if (asteroid_blocks) {
-            break; // Rail gun stops at asteroids
         }
         
         // Check for enemies at this position
@@ -554,53 +509,4 @@ function create_damage_text(target_x, target_y, damage_amount, is_critical = fal
         // Debug positioning
         show_debug_message("Created damage text at (" + string(target_x) + ", " + string(target_y) + ") with damage " + string(damage_amount));
     }
-}
-
-// Create thruster effect behind moving entity
-function create_thruster_effect(entity_x, entity_y, direction_angle, thruster_color = c_blue) {
-    // Calculate position behind the entity
-    var thruster_distance = 16; // Distance behind entity
-    var thruster_x = entity_x - lengthdir_x(thruster_distance, direction_angle);
-    var thruster_y = entity_y - lengthdir_y(thruster_distance, direction_angle);
-    
-    var thruster = instance_create_depth(thruster_x, thruster_y, -50, obj_thruster_effect);
-    if (instance_exists(thruster)) {
-        with (thruster) {
-            color = thruster_color;
-            image_blend = color;
-            image_angle = direction_angle;
-        }
-    }
-}
-
-// Create projectile effect for attacks
-function create_projectile(start_x, start_y, target_x, target_y, target_obj, damage, is_crit, weapon_type = "laser") {
-    // Apply damage immediately to preserve turn-based integrity
-    if (instance_exists(target_obj)) {
-        target_obj.take_damage(damage, is_crit);
-    }
-    
-    // Create visual projectile effect
-    var projectile = instance_create_depth(start_x, start_y, -75, obj_projectile);
-    if (instance_exists(projectile)) {
-        with (projectile) {
-            target_x = target_x;
-            target_y = target_y;
-            target_object = noone; // No need to store target since damage is already applied
-            damage_amount = 0; // No damage to apply later
-            is_critical = is_crit;
-            projectile_type = weapon_type;
-            
-            // Set color based on weapon type
-            switch (weapon_type) {
-                case "laser": color = c_yellow; break;
-                case "missile": color = c_orange; break;
-                case "rail": color = c_aqua; break;
-                case "shotgun": color = c_orange; break;
-                default: color = c_yellow; break;
-            }
-        }
-    }
-    
-    return projectile;
 }

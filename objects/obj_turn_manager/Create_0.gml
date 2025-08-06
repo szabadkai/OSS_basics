@@ -68,8 +68,22 @@ initialize_turns = function() {
         });
     }
     
-    // Add enemies to turn order
+    // Add all enemy types to turn order
     with(obj_enemy) {
+        array_push(other.turn_entities, {
+            object_id: id,
+            initiative: init,
+            type: "enemy"
+        });
+    }
+    with(obj_enemy_fighter) {
+        array_push(other.turn_entities, {
+            object_id: id,
+            initiative: init,
+            type: "enemy"
+        });
+    }
+    with(obj_enemy_heavy) {
         array_push(other.turn_entities, {
             object_id: id,
             initiative: init,
@@ -100,6 +114,14 @@ set_active_entity = function() {
         moves = moves_max;
     }
     with(obj_enemy) {
+        is_myturn = false;
+        moves = moves_max;
+    }
+    with(obj_enemy_fighter) {
+        is_myturn = false;
+        moves = moves_max;
+    }
+    with(obj_enemy_heavy) {
         is_myturn = false;
         moves = moves_max;
     }
@@ -150,7 +172,7 @@ check_game_state = function() {
     }
     
     var player_alive = instance_exists(obj_player);
-    var enemies_alive = instance_number(obj_enemy) > 0;
+    var enemies_alive = instance_number(obj_enemy) > 0 || instance_number(obj_enemy_fighter) > 0 || instance_number(obj_enemy_heavy) > 0;
     
     var old_state = game_state;
     

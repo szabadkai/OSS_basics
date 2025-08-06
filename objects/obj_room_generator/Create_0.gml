@@ -9,11 +9,16 @@ calculate_level_params = function() {
     }
     var level = global.current_level;
     
-    // Enemy count scaling: start with 15, add 3 per level, cap at 25
-    var base_enemies = 15;
-    var enemies_per_level = 3;
-    var max_enemies = 25;
-    enemy_count = min(base_enemies + (level - 1) * enemies_per_level, max_enemies);
+    // Enemy count scaling: start smaller for level 1
+    if (level == 1) {
+        enemy_count = 3; // Just 3 enemies for first level
+    } else {
+        // Normal scaling for level 2+: start with 8, add 3 per level, cap at 25
+        var base_enemies = 8;
+        var enemies_per_level = 3;
+        var max_enemies = 25;
+        enemy_count = min(base_enemies + (level - 2) * enemies_per_level, max_enemies);
+    }
     
     // Enemy stat scaling
     var hp_bonus = floor((level - 1) / 2); // +1 HP every 2 levels
@@ -226,6 +231,71 @@ spawn_planet = function(occupied_positions) {
     }
 };
 
+// Spawn asteroids for tactical cover
+spawn_asteroids = function(occupied_positions) {
+    var grid_size = global.grid_size;
+    var room_grid_width = room_width div grid_size;
+    var room_grid_height = room_height div grid_size;
+    
+    // Determine asteroid count based on level
+    var asteroid_count;
+    if (global.current_level == 1) {
+        asteroid_count = 2; // Start with just 2 asteroids for level 1
+    } else {
+        asteroid_count = 3 + floor(global.current_level / 2); // Gradually increase
+        asteroid_count = min(asteroid_count, 8); // Cap at 8 asteroids
+    }
+    
+    var asteroids_spawned = 0;
+    var attempts = 0;
+    var max_attempts = 200;
+    
+    while (asteroids_spawned < asteroid_count && attempts < max_attempts) {
+        attempts++;
+        
+        // Generate random grid position
+        var grid_x = irandom(room_grid_width - 1);
+        var grid_y = irandom(room_grid_height - 1);
+        
+        // Calculate world position (centered on grid)
+        var world_x = grid_x * grid_size + (grid_size / 2);
+        var world_y = grid_y * grid_size + (grid_size / 2);
+        
+        // Check bounds
+        if (world_x < grid_size/2 || world_x >= room_width - grid_size/2 || 
+            world_y < grid_size/2 || world_y >= room_height - grid_size/2) {
+            continue;
+        }
+        
+        // Check if position is already occupied
+        var position_free = true;
+        for (var i = 0; i < array_length(occupied_positions); i++) {
+            if (occupied_positions[i][0] == grid_x && occupied_positions[i][1] == grid_y) {
+                position_free = false;
+                break;
+            }
+        }
+        
+        // Check if position is reachable from player (asteroids shouldn't block essential paths)
+        if (position_free && is_position_reachable(grid_x, grid_y, occupied_positions)) {
+            // Spawn asteroid
+            var asteroid = instance_create_depth(world_x, world_y, 0, obj_asteroid);
+            
+            // Add position to occupied list for future spawns
+            array_push(occupied_positions, [grid_x, grid_y]);
+            asteroids_spawned++;
+            
+            show_debug_message("Spawned asteroid " + string(asteroids_spawned) + " at grid(" + string(grid_x) + ", " + string(grid_y) + ")");
+        }
+    }
+    
+    if (asteroids_spawned < asteroid_count) {
+        show_debug_message("Warning: Only spawned " + string(asteroids_spawned) + " out of " + string(asteroid_count) + " asteroids");
+    }
+    
+    show_debug_message("Asteroid generation complete. Spawned " + string(asteroids_spawned) + " asteroids");
+};
+
 // Generate random enemy positions
 generate_enemies = function() {
     // Recalculate level parameters
@@ -266,6 +336,7 @@ generate_enemies = function() {
     var spawned = 0;
     var attempts = 0;
     var max_attempts = 1000; // Prevent infinite loops
+    var fighters_spawned = 0; // Track fighter count for level 1
     
     while (spawned < enemy_count && attempts < max_attempts) {
         attempts++;
@@ -296,23 +367,72 @@ generate_enemies = function() {
         }
         
         if (position_free) {
+            // Add position to occupied list BEFORE spawning to prevent double placement
+            array_push(occupied_positions, [grid_x, grid_y]);
+            
             // world_x and world_y are already calculated above for bounds checking
             
-            // Spawn enemy
-            var enemy = instance_create_layer(world_x, world_y, "Instances", obj_enemy);
+            // Determine enemy type based on level and random chance
+            var enemy_type_roll = irandom(100);
+            var enemy_object = obj_enemy; // Default
+            var enemy_type_name = "Standard";
             
-            // Apply level-based stat scaling
-            with(enemy) {
-                hp_max = other.enemy_base_hp;
-                hp = other.enemy_base_hp;
-                damage = other.enemy_base_damage;
+            if (global.current_level >= 5) {
+                // At level 5+, introduce Heavy Cruisers as end-game enemies
+                if (enemy_type_roll < 15) {
+                    enemy_object = obj_enemy_heavy;
+                    enemy_type_name = "Heavy Cruiser";
+                } else if (enemy_type_roll < 50) {
+                    enemy_object = obj_enemy_fighter;
+                    enemy_type_name = "Fighter";
+                } else {
+                    enemy_object = obj_enemy;
+                    enemy_type_name = "Standard";
+                }
+            } else if (global.current_level >= 2) {
+                // At level 2-4, just fighters and standard enemies
+                if (enemy_type_roll < 40) {
+                    enemy_object = obj_enemy_fighter;
+                    enemy_type_name = "Fighter";
+                } else {
+                    enemy_object = obj_enemy;
+                    enemy_type_name = "Standard";
+                }
+            } else if (global.current_level >= 1) {
+                // At level 1, spawn 1 fighter max for a gentler introduction
+                if (enemy_type_roll < 50 && fighters_spawned < 1) {
+                    enemy_object = obj_enemy_fighter;
+                    enemy_type_name = "Fighter";
+                    fighters_spawned++;
+                }
             }
             
-            // Add position to occupied list
-            array_push(occupied_positions, [grid_x, grid_y]);
+            // Spawn enemy of chosen type
+            var enemy = instance_create_layer(world_x, world_y, "Instances", enemy_object);
+            
+            // Apply level-based stat scaling to standard enemies only
+            // Fighter and Heavy enemies have their own base stats
+            if (enemy_object == obj_enemy) {
+                with(enemy) {
+                    hp_max = other.enemy_base_hp;
+                    hp = other.enemy_base_hp;
+                    damage = other.enemy_base_damage;
+                }
+            } else {
+                // For specialized enemies, apply minor level scaling
+                with(enemy) {
+                    var level_hp_bonus = floor((global.current_level - 1) / 3); // +1 HP every 3 levels
+                    var level_damage_bonus = floor((global.current_level - 1) / 4); // +1 damage every 4 levels
+                    
+                    hp_max += level_hp_bonus;
+                    hp += level_hp_bonus;
+                    damage += level_damage_bonus;
+                }
+            }
+            
             spawned++;
             
-            show_debug_message("Spawned enemy " + string(spawned) + " at grid(" + string(grid_x) + ", " + string(grid_y) + ") -> world(" + string(world_x) + ", " + string(world_y) + ")");
+            show_debug_message("Spawned " + enemy_type_name + " enemy " + string(spawned) + " at grid(" + string(grid_x) + ", " + string(grid_y) + ") -> world(" + string(world_x) + ", " + string(world_y) + ")");
         }
     }
     
@@ -320,7 +440,10 @@ generate_enemies = function() {
         show_debug_message("Warning: Only spawned " + string(spawned) + " out of " + string(enemy_count) + " enemies");
     }
     
-    // Spawn planet after enemies are placed
+    // Spawn asteroids for tactical cover
+    spawn_asteroids(occupied_positions);
+    
+    // Spawn planet after enemies and asteroids are placed
     spawn_planet(occupied_positions);
     
     show_debug_message("Room generation complete. Spawned " + string(spawned) + " enemies in " + string(attempts) + " attempts");

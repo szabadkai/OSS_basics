@@ -53,6 +53,57 @@ function is_grid_position_occupied(grid_x, grid_y, exclude_self = true) {
         }
     }
     
+    with (obj_enemy_fighter) {
+        if (exclude_self && id == other.id) continue;
+        
+        var entity_grid_x, entity_grid_y;
+        if (is_animating) {
+            // Use target position if animating
+            entity_grid_x = move_target_x div global.grid_size;
+            entity_grid_y = move_target_y div global.grid_size;
+        } else {
+            // Use current position
+            entity_grid_x = x div global.grid_size;
+            entity_grid_y = y div global.grid_size;
+        }
+        
+        if (entity_grid_x == grid_x && entity_grid_y == grid_y) {
+            return true;
+        }
+    }
+    
+    with (obj_enemy_heavy) {
+        if (exclude_self && id == other.id) continue;
+        
+        var entity_grid_x, entity_grid_y;
+        if (is_animating) {
+            // Use target position if animating
+            entity_grid_x = move_target_x div global.grid_size;
+            entity_grid_y = move_target_y div global.grid_size;
+        } else {
+            // Use current position
+            entity_grid_x = x div global.grid_size;
+            entity_grid_y = y div global.grid_size;
+        }
+        
+        if (entity_grid_x == grid_x && entity_grid_y == grid_y) {
+            return true;
+        }
+    }
+    
+    // Check for asteroids (they block movement)
+    with (obj_asteroid) {
+        if (exclude_self && id == other.id) continue;
+        if (is_destroyed) continue; // Destroyed asteroids don't block
+        
+        var asteroid_grid_x = x div global.grid_size;
+        var asteroid_grid_y = y div global.grid_size;
+        
+        if (asteroid_grid_x == grid_x && asteroid_grid_y == grid_y) {
+            return true;
+        }
+    }
+    
     return false;
 }
 
@@ -90,6 +141,21 @@ function try_move(move_x, move_y) {
         return false;
     }
     
+    // Create thruster effect for movement
+    var move_direction = point_direction(x, y, new_world_x, new_world_y);
+    var thruster_color = c_blue;
+    
+    // Different thruster colors for different entity types
+    if (object_index == obj_player) {
+        thruster_color = c_lime;
+    } else if (object_index == obj_enemy_fighter) {
+        thruster_color = c_orange;
+    } else if (object_index == obj_enemy_heavy) {
+        thruster_color = c_red;
+    }
+    
+    create_thruster_effect(x, y, move_direction, thruster_color);
+    
     // Movement successful - start smooth animation
     start_smooth_movement(new_world_x, new_world_y);
     return true;
@@ -114,6 +180,19 @@ function get_direction_to_target(target_x, target_y) {
     }
 }
 
+// Get direction away from target (opposite of get_direction_to_target)
+function get_direction_away_from_target(target_x, target_y) {
+    var dx = target_x - x;
+    var dy = target_y - y;
+    
+    // Return the opposite direction
+    if (abs(dx) > abs(dy)) {
+        return dx > 0 ? [-1, 0] : [1, 0]; // Left or Right (opposite)
+    } else {
+        return dy > 0 ? [0, -1] : [0, 1]; // Up or Down (opposite)
+    }
+}
+
 // Check if target is in attack range (adjacent squares, no diagonals)
 function in_attack_range(target_x, target_y) {
     var dx = abs(target_x - x);
@@ -121,6 +200,110 @@ function in_attack_range(target_x, target_y) {
     
     // Adjacent squares (cardinal directions only)
     return (dx == grid_size && dy == 0) || (dx == 0 && dy == grid_size);
+}
+
+// Check if target is within weapon range and firing pattern
+function is_valid_weapon_target(target_x, target_y, weapon_upgrade = noone) {
+    if (weapon_upgrade == noone) {
+        // Default weapon - adjacent range only
+        return in_attack_range(target_x, target_y);
+    }
+    
+    var target_grid_x = target_x div global.grid_size;
+    var target_grid_y = target_y div global.grid_size;
+    var player_grid_x = x div global.grid_size;
+    var player_grid_y = y div global.grid_size;
+    
+    var dx = target_grid_x - player_grid_x;
+    var dy = target_grid_y - player_grid_y;
+    var distance = max(abs(dx), abs(dy)); // Grid distance
+    
+    // Check if target is within weapon's maximum range
+    if (variable_struct_exists(weapon_upgrade.effects, "max_range")) {
+        if (distance > weapon_upgrade.effects.max_range) {
+            return false;
+        }
+    } else {
+        // Default range is adjacent
+        if (distance > 1) {
+            return false;
+        }
+    }
+    
+    // Check firing pattern restrictions
+    if (variable_struct_exists(weapon_upgrade.effects, "firing_pattern")) {
+        var pattern = weapon_upgrade.effects.firing_pattern;
+        
+        switch (pattern) {
+            case "line":
+                // Rail Gun - must be in straight line (cardinal directions only)
+                return (dx == 0 && dy != 0) || (dy == 0 && dx != 0);
+                
+            case "cone":
+                // Shotgun Array - cone pattern in facing direction
+                return is_target_in_cone(target_grid_x, target_grid_y);
+                
+            case "indirect":
+                // Missile Pod - can fire around corners, no line of sight needed
+                return true;
+                
+            default:
+                // Unknown pattern, use default adjacent range
+                return distance <= 1;
+        }
+    }
+    
+    // No special pattern, use range check only
+    return true;
+}
+
+// Check if target is within shotgun cone based on player facing direction
+function is_target_in_cone(target_grid_x, target_grid_y) {
+    var player_grid_x = x div global.grid_size;
+    var player_grid_y = y div global.grid_size;
+    
+    var dx = target_grid_x - player_grid_x;
+    var dy = target_grid_y - player_grid_y;
+    
+    // Determine player facing direction based on image_angle
+    // 0 = Up, 90 = Left, 180 = Down, 270 = Right
+    switch (image_angle) {
+        case 0: // Facing Up
+            return dy < 0 && abs(dx) <= abs(dy);
+        case 90: // Facing Left
+            return dx < 0 && abs(dy) <= abs(dx);
+        case 180: // Facing Down
+            return dy > 0 && abs(dx) <= abs(dy);
+        case 270: // Facing Right
+            return dx > 0 && abs(dy) <= abs(dx);
+        default:
+            // Default to facing up if angle is unclear
+            return dy < 0 && abs(dx) <= abs(dy);
+    }
+}
+
+// Get all valid targets within weapon range and pattern
+function get_valid_weapon_targets(weapon_upgrade = noone) {
+    var valid_targets = [];
+    
+    // Check all enemy types
+    with (obj_enemy) {
+        if (other.is_valid_weapon_target(x, y, weapon_upgrade)) {
+            array_push(valid_targets, id);
+        }
+    }
+    with (obj_enemy_fighter) {
+        if (other.is_valid_weapon_target(x, y, weapon_upgrade)) {
+            array_push(valid_targets, id);
+        }
+    }
+    with (obj_enemy_heavy) {
+        if (other.is_valid_weapon_target(x, y, weapon_upgrade)) {
+            array_push(valid_targets, id);
+        }
+    }
+    
+    return valid_targets;
 }
 
 // Start smooth movement animation to target position
@@ -189,6 +372,89 @@ function try_move_or_attack(move_x, move_y) {
         } else if (move_y > 0) {
             image_angle = 180; // Down
         }
+        
+        // Check for ranged weapon attacks before attempting movement
+        var player_weapon = upgrades.weapon;
+        if (player_weapon != noone && variable_struct_exists(player_weapon.effects, "max_range")) {
+            var max_range = player_weapon.effects.max_range;
+            if (max_range > 1) {
+                // Check if there are valid ranged targets in the direction we're trying to move
+                var target_found = false;
+                
+                // Look for enemies in the movement direction up to weapon range
+                for (var range = 1; range <= max_range; range++) {
+                    var check_x = current_grid_x + (move_x * range);
+                    var check_y = current_grid_y + (move_y * range);
+                    var check_world_x = check_x * global.grid_size + (global.grid_size / 2);
+                    var check_world_y = check_y * global.grid_size + (global.grid_size / 2);
+                    
+                    // Check if position is within bounds
+                    if (check_world_x < global.grid_size/2 || check_world_x >= room_width - global.grid_size/2 || 
+                        check_world_y < global.grid_size/2 || check_world_y >= room_height - global.grid_size/2) {
+                        break;
+                    }
+                    
+                    // Find target (enemy or asteroid) at this position
+                    var target_at_range = noone;
+                    with (obj_enemy) {
+                        var enemy_grid_x = x div global.grid_size;
+                        var enemy_grid_y = y div global.grid_size;
+                        if (enemy_grid_x == check_x && enemy_grid_y == check_y) {
+                            target_at_range = id;
+                            break;
+                        }
+                    }
+                    if (target_at_range == noone) {
+                        with (obj_enemy_fighter) {
+                            var enemy_grid_x = x div global.grid_size;
+                            var enemy_grid_y = y div global.grid_size;
+                            if (enemy_grid_x == check_x && enemy_grid_y == check_y) {
+                                target_at_range = id;
+                                break;
+                            }
+                        }
+                    }
+                    if (target_at_range == noone) {
+                        with (obj_enemy_heavy) {
+                            var enemy_grid_x = x div global.grid_size;
+                            var enemy_grid_y = y div global.grid_size;
+                            if (enemy_grid_x == check_x && enemy_grid_y == check_y) {
+                                target_at_range = id;
+                                break;
+                            }
+                        }
+                    }
+                    // Check for asteroids
+                    if (target_at_range == noone) {
+                        with (obj_asteroid) {
+                            if (is_destroyed) continue;
+                            var asteroid_grid_x = x div global.grid_size;
+                            var asteroid_grid_y = y div global.grid_size;
+                            if (asteroid_grid_x == check_x && asteroid_grid_y == check_y) {
+                                target_at_range = id;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (target_at_range != noone) {
+                        // Check if this target is valid for our weapon
+                        if (is_valid_weapon_target(target_at_range.x, target_at_range.y, player_weapon)) {
+                            // Perform ranged attack
+                            execute_weapon_attack(target_at_range, player_weapon);
+                            return 2; // attacked
+                        }
+                    }
+                    
+                    // Stop checking further if we hit a tile (for line weapons like Rail Gun)
+                    if (is_tile_at_position(check_x, check_y) && 
+                        variable_struct_exists(player_weapon.effects, "firing_pattern") && 
+                        player_weapon.effects.firing_pattern == "line") {
+                        break;
+                    }
+                }
+            }
+        }
     }
     
     // Check if the new position is within room bounds
@@ -202,38 +468,56 @@ function try_move_or_attack(move_x, move_y) {
         return 0; // blocked by tile
     }
     
-    // Check for enemies at the target position
+    // Check for enemies and asteroids at the target position (melee attack)
     if (object_index == obj_player) {
-        // Check for enemy at the target grid position
-        var enemy_at_target = noone;
+        // Check for any enemy type at the target grid position
+        var target_at_position = noone;
         with (obj_enemy) {
             var enemy_grid_x = x div global.grid_size;
             var enemy_grid_y = y div global.grid_size;
             if (enemy_grid_x == new_grid_x && enemy_grid_y == new_grid_y) {
-                enemy_at_target = id;
+                target_at_position = id;
                 break;
             }
         }
+        // Check for fighter
+        if (target_at_position == noone) {
+            with (obj_enemy_fighter) {
+                var enemy_grid_x = x div global.grid_size;
+                var enemy_grid_y = y div global.grid_size;
+                if (enemy_grid_x == new_grid_x && enemy_grid_y == new_grid_y) {
+                    target_at_position = id;
+                    break;
+                }
+            }
+        }
+        // Check for heavy cruiser
+        if (target_at_position == noone) {
+            with (obj_enemy_heavy) {
+                var enemy_grid_x = x div global.grid_size;
+                var enemy_grid_y = y div global.grid_size;
+                if (enemy_grid_x == new_grid_x && enemy_grid_y == new_grid_y) {
+                    target_at_position = id;
+                    break;
+                }
+            }
+        }
+        // Check for asteroids (can be attacked to destroy them)
+        if (target_at_position == noone) {
+            with (obj_asteroid) {
+                if (is_destroyed) continue; // Can't attack destroyed asteroids
+                var asteroid_grid_x = x div global.grid_size;
+                var asteroid_grid_y = y div global.grid_size;
+                if (asteroid_grid_x == new_grid_x && asteroid_grid_y == new_grid_y) {
+                    target_at_position = id;
+                    break;
+                }
+            }
+        }
         
-        if (enemy_at_target != noone) {
-            // Attack the enemy instead of moving
-            if (has_area_attack && object_index == obj_player) {
-                // Chain Gun: Execute chain attack from upgrade system
-                execute_chain_gun_attack(enemy_at_target, damage);
-            } else {
-                // Normal single-target attack using damage function
-                // take_damage handles death animation internally now
-                enemy_at_target.take_damage(damage);
-            }
-            
-            audio_play_sound(Sound2, 1, false);
-            
-            // Check for victory immediately
-            var turn_manager = instance_find(obj_turn_manager, 0);
-            if (turn_manager != noone) {
-                turn_manager.check_game_state();
-            }
-            
+        if (target_at_position != noone) {
+            // Attack the target instead of moving (melee attack)
+            execute_weapon_attack(target_at_position, upgrades.weapon);
             return 2; // attacked
         }
     }
@@ -243,5 +527,60 @@ function try_move_or_attack(move_x, move_y) {
         return 1; // moved
     } else {
         return 0; // blocked
+    }
+}
+
+// Execute weapon attack based on weapon type and effects
+function execute_weapon_attack(target, weapon_upgrade) {
+    if (!instance_exists(target)) return;
+    
+    // Calculate critical hit for player attacks
+    var player_crit_chance = 10; // Base 10% crit chance
+    if (weapon_upgrade != noone && variable_struct_exists(weapon_upgrade.effects, "crit_chance")) {
+        player_crit_chance = weapon_upgrade.effects.crit_chance;
+    }
+    
+    if (weapon_upgrade != noone && variable_struct_exists(weapon_upgrade.effects, "area_attack") && weapon_upgrade.effects.area_attack) {
+        // Chain Gun: Execute chain attack from upgrade system (has its own crit handling)
+        execute_chain_gun_attack(target, damage);
+    } else if (weapon_upgrade != noone && variable_struct_exists(weapon_upgrade.effects, "weapon_type")) {
+        // Special weapon types with unique behaviors
+        var weapon_type = weapon_upgrade.effects.weapon_type;
+        
+        switch (weapon_type) {
+            case "shotgun":
+                // Shotgun Array: Hit all enemies in cone (has its own crit handling)
+                execute_shotgun_attack(weapon_upgrade);
+                break;
+                
+            case "rail_gun":
+                // Rail Gun: Piercing line attack (has its own crit handling)
+                execute_railgun_attack(target, weapon_upgrade);
+                break;
+                
+            case "missile":
+                // Missile Pod: Create missile projectile
+                var crit_result = calculate_critical_hit(damage, player_crit_chance);
+                create_projectile(x, y, target.x, target.y, target, crit_result.damage, crit_result.is_critical, "missile");
+                break;
+                
+            default:
+                // Normal single-target attack with laser projectile
+                var crit_result = calculate_critical_hit(damage, player_crit_chance);
+                create_projectile(x, y, target.x, target.y, target, crit_result.damage, crit_result.is_critical, "laser");
+                break;
+        }
+    } else {
+        // Normal single-target attack with laser projectile
+        var crit_result = calculate_critical_hit(damage, player_crit_chance);
+        create_projectile(x, y, target.x, target.y, target, crit_result.damage, crit_result.is_critical, "laser");
+    }
+    
+    audio_play_sound(Sound2, 1, false);
+    
+    // Check for victory immediately
+    var turn_manager = instance_find(obj_turn_manager, 0);
+    if (turn_manager != noone) {
+        turn_manager.check_game_state();
     }
 }

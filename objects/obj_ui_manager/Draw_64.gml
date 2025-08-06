@@ -37,8 +37,8 @@ if (turn_manager != noone && turn_manager.game_state == "playing") {
         }
         y_pos += line_height;
         
-        // Enemy count
-        var enemy_count = instance_number(obj_enemy);
+        // Enemy count (all types)
+        var enemy_count = instance_number(obj_enemy) + instance_number(obj_enemy_fighter) + instance_number(obj_enemy_heavy);
         draw_text(margin, y_pos, "Enemies: " + string(enemy_count));
         y_pos += line_height;
         
@@ -61,7 +61,24 @@ if (turn_manager != noone && turn_manager.game_state == "playing") {
         }
         if (player.upgrades.weapon != noone) {
             draw_set_color(get_slot_color(SLOT_WEAPON));
-            draw_text(margin, y_pos, "W: " + player.upgrades.weapon.name);
+            var weapon_text = "W: " + player.upgrades.weapon.name;
+            
+            // Add range and pattern info for special weapons
+            if (variable_struct_exists(player.upgrades.weapon.effects, "max_range")) {
+                var range = player.upgrades.weapon.effects.max_range;
+                weapon_text += " (R:" + string(range) + ")";
+                
+                if (variable_struct_exists(player.upgrades.weapon.effects, "firing_pattern")) {
+                    var pattern = player.upgrades.weapon.effects.firing_pattern;
+                    switch (pattern) {
+                        case "line": weapon_text += " Line"; break;
+                        case "cone": weapon_text += " Cone"; break;
+                        case "indirect": weapon_text += " Indirect"; break;
+                    }
+                }
+            }
+            
+            draw_text(margin, y_pos, weapon_text);
             y_pos += line_height;
         }
         if (player.upgrades.shield != noone) {

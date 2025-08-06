@@ -41,6 +41,8 @@ if (is_myturn && moves > 0 && !is_animating && !is_dying) {
                 // take_damage handles death animation internally now
                 player.take_damage(damage);
             } else {
+                // Debug enemy damage
+                show_debug_message("Enemy attacking player for " + string(damage) + " damage");
                 // Fallback to direct damage if player doesn't have take_damage function
                 player.hp -= damage;
                 if (player.hp <= 0) {

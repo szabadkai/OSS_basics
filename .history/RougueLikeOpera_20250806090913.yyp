@@ -237,12 +237,6 @@
         },
         {
             "id": {
-                "name": "obj_projectile",
-                "path": "objects/obj_projectile/obj_projectile.yy"
-            }
-        },
-        {
-            "id": {
                 "name": "obj_room_generator",
                 "path": "objects/obj_room_generator/obj_room_generator.yy"
             }
