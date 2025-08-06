@@ -1,5 +1,32 @@
 // Autotiling Functions for 47-tile autotiling system
 
+// Clear all tiles from a tilemap layer
+function clear_all_tiles(layer_id) {
+    var tilemap_id = layer_tilemap_get_id(layer_id);
+    if (tilemap_id == -1) {
+        show_debug_message("Warning: Could not find tilemap for layer " + string(layer_id));
+        return false;
+    }
+    
+    var room_grid_width = room_width div 32;
+    var room_grid_height = room_height div 32;
+    var cleared_count = 0;
+    
+    // Clear all tiles by setting them to 0
+    for (var gx = 0; gx < room_grid_width; gx++) {
+        for (var gy = 0; gy < room_grid_height; gy++) {
+            var existing_tile = tilemap_get_at_pixel(tilemap_id, gx * 32, gy * 32);
+            if (existing_tile != 0) {
+                tilemap_set_at_pixel(tilemap_id, 0, gx * 32, gy * 32);
+                cleared_count++;
+            }
+        }
+    }
+    
+    show_debug_message("Cleared " + string(cleared_count) + " tiles from layer " + string(layer_id));
+    return true;
+}
+
 // Get neighbor mask for autotiling (GameMaker's 47-tile system)
 function get_neighbor_mask(grid_x, grid_y, layer_id) {
     var tilemap_id = layer_tilemap_get_id(layer_id);
@@ -214,10 +241,46 @@ function is_position_valid_for_cluster_start(grid_x, grid_y, tilemap_id) {
         }
     }
     
+    // Check all enemy types
     with (obj_enemy) {
         var enemy_grid_x = x div 32;
         var enemy_grid_y = y div 32;
         if (enemy_grid_x == grid_x && enemy_grid_y == grid_y) {
+            return false;
+        }
+    }
+    
+    with (obj_enemy_fighter) {
+        var enemy_grid_x = x div 32;
+        var enemy_grid_y = y div 32;
+        if (enemy_grid_x == grid_x && enemy_grid_y == grid_y) {
+            return false;
+        }
+    }
+    
+    with (obj_enemy_heavy) {
+        var enemy_grid_x = x div 32;
+        var enemy_grid_y = y div 32;
+        if (enemy_grid_x == grid_x && enemy_grid_y == grid_y) {
+            return false;
+        }
+    }
+    
+    // Check for planets
+    with (obj_planet) {
+        var planet_grid_x = x div 32;
+        var planet_grid_y = y div 32;
+        if (planet_grid_x == grid_x && planet_grid_y == grid_y) {
+            return false;
+        }
+    }
+    
+    // Check for asteroids
+    with (obj_asteroid) {
+        if (is_destroyed) continue;
+        var asteroid_grid_x = x div 32;
+        var asteroid_grid_y = y div 32;
+        if (asteroid_grid_x == grid_x && asteroid_grid_y == grid_y) {
             return false;
         }
     }
@@ -299,7 +362,7 @@ function add_growth_candidates(center_x, center_y, growth_candidates, tilemap_id
             continue;
         }
         
-        // Check for entities
+        // Check for entities (all types)
         var blocked = false;
         with (obj_player) {
             if (x div 32 == new_x && y div 32 == new_y) {
@@ -308,6 +371,26 @@ function add_growth_candidates(center_x, center_y, growth_candidates, tilemap_id
         }
         with (obj_enemy) {
             if (x div 32 == new_x && y div 32 == new_y) {
+                blocked = true;
+            }
+        }
+        with (obj_enemy_fighter) {
+            if (x div 32 == new_x && y div 32 == new_y) {
+                blocked = true;
+            }
+        }
+        with (obj_enemy_heavy) {
+            if (x div 32 == new_x && y div 32 == new_y) {
+                blocked = true;
+            }
+        }
+        with (obj_planet) {
+            if (x div 32 == new_x && y div 32 == new_y) {
+                blocked = true;
+            }
+        }
+        with (obj_asteroid) {
+            if (!is_destroyed && x div 32 == new_x && y div 32 == new_y) {
                 blocked = true;
             }
         }

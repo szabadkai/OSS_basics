@@ -44,10 +44,10 @@ if (game_state == "player_win") {
             }
         }
         
-        // Regenerate room with new level parameters
+        // Regenerate entire level with new parameters (tiles + entities)
         var room_gen = instance_find(obj_room_generator, 0);
         if (room_gen != noone) {
-            room_gen.generate_enemies();
+            room_gen.regenerate_level();
         }
         
         // Reset game state

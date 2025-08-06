@@ -449,11 +449,261 @@ generate_enemies = function() {
     show_debug_message("Room generation complete. Spawned " + string(spawned) + " enemies in " + string(attempts) + " attempts");
 };
 
-// Generate enemies on room start
-generate_enemies();
+// Complete level regeneration function
+regenerate_level = function() {
+    show_debug_message("=== REGENERATING LEVEL " + string(global.current_level) + " ===");
+    
+    // Step 1: Clear all existing tiles
+    show_debug_message("Step 1: Clearing existing tiles...");
+    clear_all_tiles("Tiles_1");
+    
+    // Step 2: Clear all entities
+    show_debug_message("Step 2: Clearing entities...");
+    with(obj_enemy) instance_destroy();
+    with(obj_enemy_fighter) instance_destroy();
+    with(obj_enemy_heavy) instance_destroy();
+    with(obj_planet) instance_destroy();
+    with(obj_asteroid) instance_destroy();
+    
+    // Step 3: Generate tiles FIRST (before entities)
+    show_debug_message("Step 3: Generating tile clusters...");
+    var tiles_placed = generate_random_tiles(5, "Tiles_1");
+    show_debug_message("Placed " + string(tiles_placed) + " tiles in clusters");
+    
+    // Step 4: Generate entities with pathfinding validation
+    show_debug_message("Step 4: Generating entities with pathfinding validation...");
+    generate_entities_with_validation();
+    
+    show_debug_message("=== LEVEL REGENERATION COMPLETE ===");
+};
 
-// Generate random tiles at 5% coverage on Tiles_1 layer
-show_debug_message("Starting tile generation after enemy generation...");
-show_debug_message("Current enemy count: " + string(instance_number(obj_enemy)));
-var tiles_placed = generate_random_tiles(5, "Tiles_1");
-show_debug_message("Tile generation complete. Placed " + string(tiles_placed) + " tiles.");
+// Enhanced entity generation with pathfinding validation
+generate_entities_with_validation = function() {
+    // Recalculate level parameters
+    calculate_level_params();
+    
+    // Get player position to avoid spawning on player
+    var player = instance_find(obj_player, 0);
+    var player_grid_x = -1;
+    var player_grid_y = -1;
+    
+    if (player != noone) {
+        player_grid_x = player.x div grid_size;
+        player_grid_y = player.y div grid_size;
+    }
+    
+    // Calculate room dimensions in grid units
+    var room_grid_width = room_width div grid_size;
+    var room_grid_height = room_height div grid_size;
+    
+    show_debug_message("Room dimensions: " + string(room_width) + "x" + string(room_height) + " pixels = " + string(room_grid_width) + "x" + string(room_grid_height) + " grid cells");
+    
+    // Track occupied positions (includes player and tiles)
+    var occupied_positions = [];
+    if (player != noone) {
+        array_push(occupied_positions, [player_grid_x, player_grid_y]);
+    }
+    
+    // Add all tile positions to occupied list
+    var tiles_layer = layer_get_id("Tiles_1");
+    if (tiles_layer != -1) {
+        var tilemap_id = layer_tilemap_get_id(tiles_layer);
+        if (tilemap_id != -1) {
+            for (var tx = 0; tx < room_grid_width; tx++) {
+                for (var ty = 0; ty < room_grid_height; ty++) {
+                    var tile_data = tilemap_get_at_pixel(tilemap_id, tx * grid_size, ty * grid_size);
+                    if (tile_data != 0) {
+                        array_push(occupied_positions, [tx, ty]);
+                    }
+                }
+            }
+        }
+    }
+    
+    show_debug_message("Initial occupied positions: " + string(array_length(occupied_positions)) + " (including " + string(array_length(occupied_positions) - (player != noone ? 1 : 0)) + " tiles)");
+    
+    // Generate asteroids first (they're tactical cover)
+    spawn_asteroids(occupied_positions);
+    
+    // Generate enemies with validation
+    generate_enemies_validated(occupied_positions);
+    
+    // Generate planet last
+    spawn_planet(occupied_positions);
+    
+    // Final pathfinding validation
+    validate_level_accessibility();
+};
+
+// Enhanced enemy generation with proper validation
+generate_enemies_validated = function(occupied_positions) {
+    var spawned = 0;
+    var attempts = 0;
+    var max_attempts = 2000; // Increased for more thorough search
+    var fighters_spawned = 0;
+    
+    while (spawned < enemy_count && attempts < max_attempts) {
+        attempts++;
+        
+        // Generate random grid position
+        var grid_x = irandom(room_width div grid_size - 1);
+        var grid_y = irandom(room_height div grid_size - 1);
+        
+        // Calculate world position (centered on tile)
+        var world_x = grid_x * grid_size + (grid_size / 2);
+        var world_y = grid_y * grid_size + (grid_size / 2);
+        
+        // Skip if out of bounds
+        if (world_x < grid_size/2 || world_x >= room_width - grid_size/2 || 
+            world_y < grid_size/2 || world_y >= room_height - grid_size/2) {
+            continue;
+        }
+        
+        // Check if position is already occupied
+        var position_free = true;
+        for (var i = 0; i < array_length(occupied_positions); i++) {
+            if (occupied_positions[i][0] == grid_x && occupied_positions[i][1] == grid_y) {
+                position_free = false;
+                break;
+            }
+        }
+        
+        // Check if position is reachable from player (prevents isolation)
+        if (position_free && is_position_reachable(grid_x, grid_y, occupied_positions)) {
+            // Add position to occupied list BEFORE spawning
+            array_push(occupied_positions, [grid_x, grid_y]);
+            
+            // Determine enemy type based on level
+            var enemy_type_roll = irandom(100);
+            var enemy_object = obj_enemy;
+            var enemy_type_name = "Standard";
+            
+            if (global.current_level >= 5) {
+                if (enemy_type_roll < 15) {
+                    enemy_object = obj_enemy_heavy;
+                    enemy_type_name = "Heavy Cruiser";
+                } else if (enemy_type_roll < 50) {
+                    enemy_object = obj_enemy_fighter;
+                    enemy_type_name = "Fighter";
+                }
+            } else if (global.current_level >= 2) {
+                if (enemy_type_roll < 40) {
+                    enemy_object = obj_enemy_fighter;
+                    enemy_type_name = "Fighter";
+                }
+            } else if (global.current_level >= 1 && enemy_type_roll < 50 && fighters_spawned < 1) {
+                enemy_object = obj_enemy_fighter;
+                enemy_type_name = "Fighter";
+                fighters_spawned++;
+            }
+            
+            // Spawn enemy
+            var enemy = instance_create_layer(world_x, world_y, "Instances", enemy_object);
+            
+            // Apply level-based stat scaling
+            if (enemy_object == obj_enemy) {
+                with(enemy) {
+                    hp_max = other.enemy_base_hp;
+                    hp = other.enemy_base_hp;
+                    damage = other.enemy_base_damage;
+                }
+            } else {
+                with(enemy) {
+                    var level_hp_bonus = floor((global.current_level - 1) / 3);
+                    var level_damage_bonus = floor((global.current_level - 1) / 4);
+                    hp_max += level_hp_bonus;
+                    hp += level_hp_bonus;
+                    damage += level_damage_bonus;
+                }
+            }
+            
+            spawned++;
+            show_debug_message("Spawned " + enemy_type_name + " enemy " + string(spawned) + " at grid(" + string(grid_x) + ", " + string(grid_y) + ")");
+        }
+    }
+    
+    if (spawned < enemy_count) {
+        show_debug_message("Warning: Only spawned " + string(spawned) + " out of " + string(enemy_count) + " enemies after " + string(attempts) + " attempts");
+    }
+    
+    show_debug_message("Enemy generation complete. Spawned " + string(spawned) + " enemies in " + string(attempts) + " attempts");
+};
+
+// Validate that all entities can reach each other
+validate_level_accessibility = function() {
+    var player = instance_find(obj_player, 0);
+    if (player == noone) return;
+    
+    var player_grid_x = player.x div grid_size;
+    var player_grid_y = player.y div grid_size;
+    
+    // Get all current occupied positions for pathfinding
+    var occupied_positions = [];
+    
+    // Add tiles
+    var tiles_layer = layer_get_id("Tiles_1");
+    if (tiles_layer != -1) {
+        var tilemap_id = layer_tilemap_get_id(tiles_layer);
+        if (tilemap_id != -1) {
+            var room_grid_width = room_width div grid_size;
+            var room_grid_height = room_height div grid_size;
+            for (var tx = 0; tx < room_grid_width; tx++) {
+                for (var ty = 0; ty < room_grid_height; ty++) {
+                    var tile_data = tilemap_get_at_pixel(tilemap_id, tx * grid_size, ty * grid_size);
+                    if (tile_data != 0) {
+                        array_push(occupied_positions, [tx, ty]);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Add asteroids
+    with (obj_asteroid) {
+        if (!is_destroyed) {
+            var ast_grid_x = x div global.grid_size;
+            var ast_grid_y = y div global.grid_size;
+            array_push(occupied_positions, [ast_grid_x, ast_grid_y]);
+        }
+    }
+    
+    var unreachable_enemies = 0;
+    var total_enemies = 0;
+    
+    // Check each enemy type for reachability
+    with (obj_enemy) {
+        total_enemies++;
+        var enemy_grid_x = x div global.grid_size;
+        var enemy_grid_y = y div global.grid_size;
+        if (!other.is_position_reachable(enemy_grid_x, enemy_grid_y, occupied_positions)) {
+            unreachable_enemies++;
+        }
+    }
+    
+    with (obj_enemy_fighter) {
+        total_enemies++;
+        var enemy_grid_x = x div global.grid_size;
+        var enemy_grid_y = y div global.grid_size;
+        if (!other.is_position_reachable(enemy_grid_x, enemy_grid_y, occupied_positions)) {
+            unreachable_enemies++;
+        }
+    }
+    
+    with (obj_enemy_heavy) {
+        total_enemies++;
+        var enemy_grid_x = x div global.grid_size;
+        var enemy_grid_y = y div global.grid_size;
+        if (!other.is_position_reachable(enemy_grid_x, enemy_grid_y, occupied_positions)) {
+            unreachable_enemies++;
+        }
+    }
+    
+    if (unreachable_enemies > 0) {
+        show_debug_message("WARNING: " + string(unreachable_enemies) + " out of " + string(total_enemies) + " enemies are unreachable from player!");
+    } else {
+        show_debug_message("Pathfinding validation passed: All " + string(total_enemies) + " enemies are reachable");
+    }
+};
+
+// Generate enemies on room start (initial level only)
+regenerate_level();

@@ -141,20 +141,22 @@ function try_move(move_x, move_y) {
         return false;
     }
     
-    // Create thruster effect for movement
-    var move_direction = point_direction(x, y, new_world_x, new_world_y);
-    var thruster_color = c_blue;
-    
-    // Different thruster colors for different entity types
-    if (object_index == obj_player) {
-        thruster_color = c_lime;
-    } else if (object_index == obj_enemy_fighter) {
-        thruster_color = c_orange;
-    } else if (object_index == obj_enemy_heavy) {
-        thruster_color = c_red;
+    // Create thruster effect for movement only if visible in viewport
+    if (is_in_viewport()) {
+        var move_direction = point_direction(x, y, new_world_x, new_world_y);
+        var thruster_color = c_blue;
+        
+        // Different thruster colors for different entity types
+        if (object_index == obj_player) {
+            thruster_color = c_lime;
+        } else if (object_index == obj_enemy_fighter) {
+            thruster_color = c_orange;
+        } else if (object_index == obj_enemy_heavy) {
+            thruster_color = c_red;
+        }
+        
+        create_thruster_effect(x, y, move_direction, thruster_color);
     }
-    
-    create_thruster_effect(x, y, move_direction, thruster_color);
     
     // Movement successful - start smooth animation
     start_smooth_movement(new_world_x, new_world_y);
@@ -322,24 +324,49 @@ function start_smooth_movement(target_x, target_y, duration = 0.2) {
     move_duration = duration;
 }
 
+// Check if object is visible in current viewport
+function is_in_viewport() {
+    // Get camera position and view size
+    var cam_x = camera_get_view_x(view_camera[0]);
+    var cam_y = camera_get_view_y(view_camera[0]);
+    var cam_w = camera_get_view_width(view_camera[0]);
+    var cam_h = camera_get_view_height(view_camera[0]);
+    
+    // Add buffer zone to prevent pop-in/out during movement
+    var buffer = 64;
+    
+    // Check if object is within viewport bounds (with buffer)
+    return (x >= cam_x - buffer && x <= cam_x + cam_w + buffer && 
+            y >= cam_y - buffer && y <= cam_y + cam_h + buffer);
+}
+
 // Update smooth movement animation (call in Step event)
 function update_smooth_movement() {
     if (is_animating) {
-        move_timer += 1 / room_speed;
-        
-        if (move_timer >= move_duration) {
-            // Animation complete
+        // Only animate if object is visible in viewport
+        if (is_in_viewport()) {
+            move_timer += 1 / room_speed;
+            
+            if (move_timer >= move_duration) {
+                // Animation complete
+                x = move_target_x;
+                y = move_target_y;
+                is_animating = false;
+                move_timer = 0;
+            } else {
+                // Interpolate position using easing function
+                var progress = move_timer / move_duration;
+                var eased_progress = ease_out_cubic(progress);
+                
+                x = lerp(move_start_x, move_target_x, eased_progress);
+                y = lerp(move_start_y, move_target_y, eased_progress);
+            }
+        } else {
+            // Object not visible, skip animation and jump to final position
             x = move_target_x;
             y = move_target_y;
             is_animating = false;
             move_timer = 0;
-        } else {
-            // Interpolate position using easing function
-            var progress = move_timer / move_duration;
-            var eased_progress = ease_out_cubic(progress);
-            
-            x = lerp(move_start_x, move_target_x, eased_progress);
-            y = lerp(move_start_y, move_target_y, eased_progress);
         }
     }
 }
