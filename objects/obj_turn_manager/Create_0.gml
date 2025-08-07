@@ -2,7 +2,7 @@
 current_turn = 0;
 turn_entities = [];
 turn_index = 0;
-game_state = "playing"; // "playing", "player_win", "player_lose", "upgrade_selection", "planet_landing_confirm", "planet_exploration"
+game_state = "playing"; // "playing", "player_win", "player_lose", "upgrade_selection", "planet_landing_confirm", "crew_selection", "planet_exploration", "encounter_active", "encounter_result", "returning_from_encounter"
 
 // Initialize upgrade system
 if (!variable_global_exists("upgrades")) {
@@ -28,6 +28,16 @@ selected_upgrade = -1; // Which upgrade player has chosen (-1 = none yet)
 // Planet landing confirmation system
 planet_landing_confirmed = false; // Whether player confirmed landing
 
+// Crew selection system
+crew_selection_stage = 0; // Current stage of crew selection
+selected_crew_ids = []; // Array of selected crew member indices
+
+// Encounter system
+current_encounter = noone; // Current active encounter
+encounter_stage = 0; // Current stage of encounter
+encounter_results = []; // Results from each stage
+encounter_rewards = noone; // Calculated rewards
+
 // Reset level to 1 (used on game restart/defeat)
 reset_level = function() {
     global.current_level = 1;
@@ -51,6 +61,25 @@ trigger_planet_landing = function() {
         planet_landing_confirmed = false;
         show_debug_message("Planet landing confirmation triggered");
     }
+};
+
+// Start planet encounter
+start_encounter = function(planet_data, selected_crew) {
+    if (!variable_global_exists("current_planet") || global.current_planet == noone) {
+        show_debug_message("Warning: No planet data available for encounter");
+        return false;
+    }
+    
+    // Generate encounter based on planet type (selected crew accessed from player)
+    current_encounter = generate_planet_encounter(planet_data, selected_crew);
+    encounter_stage = 0;
+    encounter_results = [];
+    encounter_rewards = noone;
+    
+    game_state = "encounter_active";
+    show_debug_message("Started encounter: " + current_encounter.title + " with " + string(array_length(selected_crew)) + " crew members");
+    
+    return true;
 };
 
 

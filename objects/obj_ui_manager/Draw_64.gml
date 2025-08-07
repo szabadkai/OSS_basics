@@ -86,6 +86,39 @@ if (turn_manager != noone && turn_manager.game_state == "playing") {
             draw_text(margin, y_pos, "S: " + player.upgrades.shield.name);
             y_pos += line_height;
         }
+        
+        // Crew roster display
+        y_pos += 5; // Small gap
+        draw_set_color(c_ltgray);
+        draw_text(margin, y_pos, "Crew Roster:");
+        y_pos += line_height;
+        
+        if (array_length(player.crew_roster) > 0) {
+            for (var i = 0; i < array_length(player.crew_roster) && i < 6; i++) { // Show max 6 crew members
+                var crew = player.crew_roster[i];
+                var crew_color = get_crew_color(crew.type);
+                draw_set_color(crew_color);
+                
+                var crew_text = crew.name + " (" + crew.type + ")";
+                if (crew.health < 100) {
+                    crew_text += " [" + string(crew.health) + "%]";
+                }
+                
+                draw_text(margin, y_pos, crew_text);
+                y_pos += line_height;
+            }
+            
+            if (array_length(player.crew_roster) > 6) {
+                draw_set_color(c_gray);
+                draw_text(margin, y_pos, "... +" + string(array_length(player.crew_roster) - 6) + " more");
+                y_pos += line_height;
+            }
+        } else {
+            draw_set_color(c_red);
+            draw_text(margin, y_pos, "No crew members");
+            y_pos += line_height;
+        }
+        
         draw_set_color(c_white);
     }
 }
@@ -229,6 +262,100 @@ if (turn_manager != noone) {
         draw_set_color(c_yellow);
         draw_text_transformed(center_x, center_y + 80, "Press 1 or 2 to select upgrade", 1.3, 1.3, 0);
 
+        // Reset alignment
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+
+    } else if (turn_manager.game_state == "crew_selection") {
+        // Crew Selection Screen
+        draw_set_halign(fa_center);
+        draw_set_valign(fa_middle);
+        
+        // Background box
+        draw_set_color(c_black);
+        draw_set_alpha(0.9);
+        draw_rectangle(center_x - 350, center_y - 200, center_x + 350, center_y + 200, false);
+        
+        // Title
+        draw_set_alpha(1);
+        draw_set_color(c_yellow);
+        draw_text_transformed(center_x, center_y - 170, "SELECT CREW FOR MISSION", 2.0, 2.0, 0);
+        
+        // Subtitle
+        draw_set_color(c_white);
+        draw_text_transformed(center_x, center_y - 140, "Choose exactly 2 crew members", 1.2, 1.2, 0);
+        
+        var player = instance_find(obj_player, 0);
+        if (player != noone && array_length(player.crew_roster) > 0) {
+            // Display crew roster
+            var start_y = center_y - 100;
+            var line_height = 25;
+            
+            for (var i = 0; i < min(8, array_length(player.crew_roster)); i++) {
+                var crew = player.crew_roster[i];
+                var crew_y = start_y + (i * line_height);
+                
+                // Check if this crew member is selected
+                var is_selected = false;
+                for (var j = 0; j < array_length(turn_manager.selected_crew_ids); j++) {
+                    if (turn_manager.selected_crew_ids[j] == i) {
+                        is_selected = true;
+                        break;
+                    }
+                }
+                
+                // Highlight selected crew
+                if (is_selected) {
+                    draw_set_color(c_yellow);
+                    draw_set_alpha(0.3);
+                    draw_rectangle(center_x - 300, crew_y - 8, center_x + 300, crew_y + 16, false);
+                    draw_set_alpha(1);
+                }
+                
+                // Crew number and selection status
+                draw_set_color(c_ltgray);
+                draw_text_transformed(center_x - 280, crew_y, "[" + string(i + 1) + "]", 1.1, 1.1, 0);
+                
+                // Crew name and type
+                var crew_color = get_crew_color(crew.type);
+                draw_set_color(crew_color);
+                draw_text_transformed(center_x - 240, crew_y, crew.name, 1.2, 1.2, 0);
+                
+                draw_set_color(c_white);
+                draw_text_transformed(center_x - 50, crew_y, "(" + crew.type + ")", 1.0, 1.0, 0);
+                
+                // Health status
+                var health_color = c_lime;
+                if (crew.health < 75) health_color = c_yellow;
+                if (crew.health < 50) health_color = c_red;
+                
+                draw_set_color(health_color);
+                draw_text_transformed(center_x + 150, crew_y, string(crew.health) + "%", 1.0, 1.0, 0);
+                
+                // Selection indicator
+                if (is_selected) {
+                    draw_set_color(c_yellow);
+                    draw_text_transformed(center_x + 220, crew_y, "SELECTED", 1.0, 1.0, 0);
+                }
+            }
+        }
+        
+        // Instructions
+        var selected_count = array_length(turn_manager.selected_crew_ids);
+        draw_set_color(c_ltgray);
+        draw_text_transformed(center_x, center_y + 120, "Press 1-8 to select crew members", 1.1, 1.1, 0);
+        
+        if (selected_count == 2) {
+            draw_set_color(c_lime);
+            draw_text_transformed(center_x, center_y + 145, "[ENTER] Confirm Selection", 1.3, 1.3, 0);
+        } else {
+            draw_set_color(c_yellow);
+            draw_text_transformed(center_x, center_y + 145, "Select " + string(2 - selected_count) + " more crew member" + (selected_count == 1 ? "" : "s"), 1.2, 1.2, 0);
+        }
+        
+        draw_set_color(c_red);
+        draw_text_transformed(center_x, center_y + 170, "[ESC] Cancel Mission", 1.1, 1.1, 0);
+        
         // Reset alignment
         draw_set_halign(fa_left);
         draw_set_valign(fa_top);
@@ -448,6 +575,18 @@ if (turn_manager != noone) {
             draw_text(info_margin, info_y, "B - Return to Space");
             info_y += info_line_height;
             
+            // Show encounter status
+            var player = instance_find(obj_player, 0);
+            if (player != noone && array_length(player.selected_crew) >= 2) {
+                draw_set_color(c_lime);
+                draw_text(info_margin, info_y, "Encounter will start automatically");
+                info_y += info_line_height;
+            } else {
+                draw_set_color(c_gray);
+                draw_text(info_margin, info_y, "Need 2 crew for encounters");
+                info_y += info_line_height;
+            }
+            
             // Wrap the exploration text (limit to ~18 characters)
             var explore_text = "Explore the surface for resources";
             if (string_length(explore_text) > 18) {
@@ -481,5 +620,176 @@ if (turn_manager != noone) {
             draw_set_color(c_ltgray);
             draw_text(info_margin, info_y, "B - Return to Space");
         }
+        
+    } else if (turn_manager.game_state == "encounter_active") {
+        // Active Encounter Interface
+        draw_set_halign(fa_center);
+        draw_set_valign(fa_middle);
+        
+        // Background box
+        draw_set_color(c_black);
+        draw_set_alpha(0.95);
+        draw_rectangle(center_x - 400, center_y - 250, center_x + 400, center_y + 250, false);
+        
+        draw_set_alpha(1);
+        if (turn_manager.current_encounter != noone) {
+            var encounter = turn_manager.current_encounter;
+            var stage_index = turn_manager.encounter_stage;
+            
+            // Encounter title
+            draw_set_color(c_yellow);
+            draw_text_transformed(center_x, center_y - 220, encounter.title, 2.0, 2.0, 0);
+            
+            // Encounter description (if first stage) - wrapped text
+            var text_y_pos = center_y - 180;
+            if (stage_index == 0) {
+                draw_set_color(c_white);
+                var desc_lines = wrap_text(encounter.description, 60); // 60 chars per line
+                for (var d = 0; d < array_length(desc_lines); d++) {
+                    draw_text_transformed(center_x, text_y_pos + (d * 20), desc_lines[d], 1.0, 1.0, 0);
+                }
+                text_y_pos += array_length(desc_lines) * 20 + 20; // Add spacing
+            } else {
+                text_y_pos = center_y - 140; // Less space needed without description
+            }
+            
+            if (stage_index < array_length(encounter.stages)) {
+                var current_stage = encounter.stages[stage_index];
+                
+                // Stage question
+                draw_set_color(c_ltgray);
+                draw_text_transformed(center_x, text_y_pos - 40, "Stage " + string(stage_index + 1) + " of " + string(array_length(encounter.stages)), 1.1, 1.1, 0);
+                
+                // Wrapped stage question
+                draw_set_color(c_white);
+                var question_lines = wrap_text(current_stage.question, 50); // 50 chars per line
+                var question_y = text_y_pos - 10;
+                for (var q = 0; q < array_length(question_lines); q++) {
+                    draw_text_transformed(center_x, question_y + (q * 18), question_lines[q], 1.3, 1.3, 0);
+                }
+                
+                // Choice options with proper spacing
+                var current_choice_y = question_y + (array_length(question_lines) * 18) + 20;
+                for (var i = 0; i < array_length(current_stage.choices); i++) {
+                    var choice = current_stage.choices[i];
+                    
+                    // Choice number and text - wrapped
+                    draw_set_color(c_lime);
+                    var choice_text = "[" + string(i + 1) + "] " + choice.text;
+                    var choice_lines = wrap_text(choice_text, 45); // 45 chars per line for choices
+                    
+                    for (var cl = 0; cl < array_length(choice_lines); cl++) {
+                        draw_text_transformed(center_x, current_choice_y + (cl * 16), choice_lines[cl], 1.1, 1.1, 0);
+                    }
+                    current_choice_y += array_length(choice_lines) * 16 + 5; // Move down after choice text
+                    
+                    // Show crew bonus if applicable
+                    if (choice.crew_bonus != "none") {
+                        draw_set_color(get_crew_color(choice.crew_bonus));
+                        draw_text_transformed(center_x, current_choice_y, choice.crew_bonus + " Bonus (Difficulty: " + string(choice.difficulty) + "%)", 0.9, 0.9, 0);
+                    } else {
+                        draw_set_color(c_gray);
+                        draw_text_transformed(center_x, current_choice_y, "No Crew Bonus (Difficulty: " + string(choice.difficulty) + "%)", 0.9, 0.9, 0);
+                    }
+                    current_choice_y += 25; // Space between choices
+                }
+                
+                // Instructions
+                draw_set_color(c_yellow);
+                draw_text_transformed(center_x, center_y + 180, "Press 1-" + string(array_length(current_stage.choices)) + " to make your choice", 1.1, 1.1, 0);
+            }
+        }
+        
+        // Reset alignment
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+        
+    } else if (turn_manager.game_state == "encounter_result") {
+        // Encounter Result Interface
+        draw_set_halign(fa_center);
+        draw_set_valign(fa_middle);
+        
+        // Background box
+        draw_set_color(c_black);
+        draw_set_alpha(0.95);
+        draw_rectangle(center_x - 350, center_y - 200, center_x + 350, center_y + 200, false);
+        
+        draw_set_alpha(1);
+        if (turn_manager.encounter_rewards != noone) {
+            var rewards = turn_manager.encounter_rewards;
+            
+            // Title
+            draw_set_color(c_yellow);
+            draw_text_transformed(center_x, center_y - 170, "ENCOUNTER COMPLETE", 2.2, 2.2, 0);
+            
+            // Success/failure summary
+            var success_count = 0;
+            for (var i = 0; i < array_length(turn_manager.encounter_results); i++) {
+                if (turn_manager.encounter_results[i].success) success_count++;
+            }
+            var total_stages = array_length(turn_manager.encounter_results);
+            
+            if (success_count == total_stages) {
+                draw_set_color(c_lime);
+                draw_text_transformed(center_x, center_y - 130, "COMPLETE SUCCESS! (" + string(success_count) + "/" + string(total_stages) + ")", 1.5, 1.5, 0);
+            } else if (success_count >= total_stages / 2) {
+                draw_set_color(c_yellow);
+                draw_text_transformed(center_x, center_y - 130, "PARTIAL SUCCESS (" + string(success_count) + "/" + string(total_stages) + ")", 1.5, 1.5, 0);
+            } else {
+                draw_set_color(c_red);
+                draw_text_transformed(center_x, center_y - 130, "MISSION FAILED (" + string(success_count) + "/" + string(total_stages) + ")", 1.5, 1.5, 0);
+            }
+            
+            // Reward message
+            draw_set_color(c_white);
+            draw_text_transformed(center_x, center_y - 80, rewards.message, 1.1, 1.1, 0);
+            
+            // Resource rewards
+            var reward_y = center_y - 30;
+            var resource_names = struct_get_names(rewards.resources);
+            var has_resources = false;
+            
+            for (var j = 0; j < array_length(resource_names); j++) {
+                var resource_name = resource_names[j];
+                var amount = rewards.resources[$ resource_name];
+                if (amount > 0) {
+                    has_resources = true;
+                    
+                    // Color code by resource type
+                    switch (resource_name) {
+                        case "fuel": draw_set_color(c_orange); break;
+                        case "materials": draw_set_color(c_silver); break;
+                        case "intel": draw_set_color(c_aqua); break;
+                        case "crew": draw_set_color(c_lime); break;
+                        default: draw_set_color(c_white); break;
+                    }
+                    
+                    draw_text_transformed(center_x, reward_y, "+" + string(amount) + " " + string_upper(string_char_at(resource_name, 1)) + string_copy(resource_name, 2, string_length(resource_name)), 1.2, 1.2, 0);
+                    reward_y += 25;
+                }
+            }
+            
+            if (!has_resources && rewards.ship_healing == 0) {
+                draw_set_color(c_gray);
+                draw_text_transformed(center_x, reward_y, "No material rewards gained", 1.0, 1.0, 0);
+            }
+            
+            // Ship healing/damage
+            if (rewards.ship_healing > 0) {
+                draw_set_color(c_lime);
+                draw_text_transformed(center_x, reward_y + 30, "Ship Healed: +" + string(rewards.ship_healing) + " HP", 1.2, 1.2, 0);
+            } else if (rewards.ship_healing < 0) {
+                draw_set_color(c_red);
+                draw_text_transformed(center_x, reward_y + 30, "Ship Damaged: " + string(rewards.ship_healing) + " HP", 1.2, 1.2, 0);
+            }
+            
+            // Continue instruction
+            draw_set_color(c_yellow);
+            draw_text_transformed(center_x, center_y + 160, "[ENTER] Continue Exploration", 1.3, 1.3, 0);
+        }
+        
+        // Reset alignment
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
       }
  }

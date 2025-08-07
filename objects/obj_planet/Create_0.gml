@@ -22,6 +22,8 @@ image_blend = biome_config.color; // Tint planet with biome color
 
 // Landing confirmation tracking
 landing_triggered = false;
+visited = false; // Track if planet has been explored (one encounter per planet)
+visited_level = -1; // Track which level this planet was visited on (-1 = never visited)
 
 show_debug_message("Created " + planet_data.name + " (" + planet_data.type_data.name + ") at level " + string(level));
 

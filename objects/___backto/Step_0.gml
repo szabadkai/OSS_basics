@@ -12,5 +12,7 @@ if (keyboard_check_pressed(ord("B"))) {
     room_goto(rm_space_rouglite);
 }
 
+// E key functionality removed - encounters now start automatically
+
 
 

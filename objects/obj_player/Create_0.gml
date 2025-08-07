@@ -16,6 +16,10 @@ upgrades = {
     shield: noone     // Shield slot upgrade
 };
 
+// Crew management system
+crew_roster = [];
+selected_crew = []; // Crew selected for current planet mission
+
 // Current stats (will be calculated from base + upgrades)
 damage = base_damage;
 hp_max = base_hp_max;
@@ -122,6 +126,68 @@ recalculate_stats = function() {
                       ", Damage: " + string(damage) + ", Moves: " + string(moves_max) + 
                       ", Init: " + string(init));
 };
+
+// Crew management functions
+add_crew_member = function(crew_type, crew_name = "") {
+    // Generate crew member data
+    var new_crew = create_crew_member(crew_type, crew_name);
+    
+    // Add to roster if not already at capacity
+    if (array_length(crew_roster) < 8) { // Max 8 crew members
+        array_push(crew_roster, new_crew);
+        show_debug_message("Added " + new_crew.name + " (" + new_crew.type + ") to crew roster");
+        return true;
+    } else {
+        show_debug_message("Crew roster full - cannot add " + crew_type);
+        return false;
+    }
+};
+
+get_crew_by_type = function(crew_type) {
+    var matching_crew = [];
+    for (var i = 0; i < array_length(crew_roster); i++) {
+        if (crew_roster[i].type == crew_type) {
+            array_push(matching_crew, crew_roster[i]);
+        }
+    }
+    return matching_crew;
+};
+
+select_crew_for_mission = function(crew_ids) {
+    selected_crew = [];
+    for (var i = 0; i < array_length(crew_ids) && i < 2; i++) {
+        var crew_id = crew_ids[i];
+        if (crew_id >= 0 && crew_id < array_length(crew_roster)) {
+            array_push(selected_crew, crew_roster[crew_id]);
+        }
+    }
+    show_debug_message("Selected " + string(array_length(selected_crew)) + " crew members for mission");
+};
+
+add_crew_member_direct = function(crew_data) {
+    // Add pre-created crew member directly to roster
+    if (array_length(crew_roster) < 8) { // Max 8 crew members
+        array_push(crew_roster, crew_data);
+        show_debug_message("Added " + crew_data.name + " (" + crew_data.type + ") directly to crew roster");
+        return true;
+    } else {
+        show_debug_message("Crew roster full - cannot add " + crew_data.name);
+        return false;
+    }
+};
+
+has_crew_type = function(crew_type) {
+    for (var i = 0; i < array_length(selected_crew); i++) {
+        if (selected_crew[i].type == crew_type) {
+            return true;
+        }
+    }
+    return false;
+};
+
+// Initialize with starting crew (Engineer and Navigator)
+add_crew_member("Engineer", "Chief Torres");
+add_crew_member("Navigator", "Lt. Singh");
 
 // Snap to grid on creation
 snap_to_grid();

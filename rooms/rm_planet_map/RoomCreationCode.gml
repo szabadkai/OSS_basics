@@ -123,4 +123,31 @@ if (!instance_exists(obj_ui_manager)) {
     show_debug_message("Created UI manager for planet exploration");
 }
 
-show_debug_message("Planet map initialized - press B to return to space");
+show_debug_message("Planet map initialized - auto-starting encounter");
+
+// Auto-start encounter when entering planet
+var turn_manager = instance_find(obj_turn_manager, 0);
+var player = instance_find(obj_player, 0);
+
+if (turn_manager != noone && player != noone) {
+    // Check if we have the necessary data to start encounter
+    if (turn_manager.game_state == "planet_exploration" && 
+        variable_global_exists("current_planet") && 
+        global.current_planet != noone &&
+        array_length(player.selected_crew) >= 2) {
+        
+        // Auto-start encounter with selected crew
+        if (turn_manager.start_encounter(global.current_planet.data, player.selected_crew)) {
+            show_debug_message("Planet encounter auto-started successfully");
+        } else {
+            show_debug_message("Failed to auto-start encounter - check planet data");
+        }
+    } else {
+        show_debug_message("Cannot auto-start encounter - missing requirements:");
+        show_debug_message("- Game state: " + string(turn_manager.game_state) + " (need planet_exploration)");
+        show_debug_message("- Current planet: " + string(variable_global_exists("current_planet") ? "exists" : "missing"));
+        show_debug_message("- Selected crew: " + string(array_length(player.selected_crew)) + " (need 2+)");
+    }
+} else {
+    show_debug_message("Cannot find turn manager or player for auto-encounter");
+}

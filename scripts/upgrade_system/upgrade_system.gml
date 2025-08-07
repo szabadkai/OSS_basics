@@ -227,6 +227,18 @@ function get_slot_color(slot_type) {
     }
 }
 
+// Get crew color for UI
+function get_crew_color(crew_type) {
+    switch (crew_type) {
+        case "Engineer": return c_orange;
+        case "Navigator": return c_aqua;
+        case "Gunner": return c_red;
+        case "Medic": return c_lime;
+        case "Scientist": return c_purple;
+        default: return c_white;
+    }
+}
+
 // Chain Gun attack - chains from initial target through connected enemies
 function execute_chain_gun_attack(initial_target, player_damage) {
     if (!instance_exists(initial_target)) return 0;

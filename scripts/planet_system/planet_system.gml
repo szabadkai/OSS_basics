@@ -11,6 +11,13 @@
 #macro RESOURCE_INTEL 3
 #macro RESOURCE_CREW 4
 
+// Crew type constants for encounters
+#macro CREW_ENGINEER 0
+#macro CREW_NAVIGATOR 1
+#macro CREW_GUNNER 2
+#macro CREW_MEDIC 3
+#macro CREW_SCIENTIST 4
+
 // Initialize planet system (simplified - Desert and Forest only)
 function init_planet_system() {
     global.planet_types = [];
@@ -449,5 +456,550 @@ function determine_tile_function(biome_name, is_center, random_value) {
         return TILE_FUNCTION_FEATURE;
     } else {
         return TILE_FUNCTION_RARE;
+    }
+}
+
+// Crew Management System
+function create_crew_member(crew_type, crew_name = "") {
+    var crew_data = {
+        type: crew_type,
+        name: crew_name,
+        experience: 0,
+        health: 100,
+        specialties: [],
+        encounter_bonuses: {}
+    };
+    
+    // Set default name if not provided
+    if (crew_name == "") {
+        var names = get_crew_names(crew_type);
+        crew_data.name = names[irandom(array_length(names) - 1)];
+    }
+    
+    // Set crew type-specific bonuses and specialties
+    switch (crew_type) {
+        case "Engineer":
+            crew_data.specialties = ["Tech Repairs", "System Analysis"];
+            crew_data.encounter_bonuses = {
+                tech_problems: 25,
+                machinery: 30,
+                repairs: 35
+            };
+            break;
+            
+        case "Navigator":
+            crew_data.specialties = ["Stellar Navigation", "Terrain Analysis"];
+            crew_data.encounter_bonuses = {
+                navigation: 30,
+                exploration: 25,
+                path_finding: 35
+            };
+            break;
+            
+        case "Gunner":
+            crew_data.specialties = ["Combat Tactics", "Weapon Systems"];
+            crew_data.encounter_bonuses = {
+                combat: 35,
+                intimidation: 25,
+                security: 30
+            };
+            break;
+            
+        case "Medic":
+            crew_data.specialties = ["Medical Treatment", "Biological Analysis"];
+            crew_data.encounter_bonuses = {
+                medical: 35,
+                biology: 30,
+                survival: 25
+            };
+            break;
+            
+        case "Scientist":
+            crew_data.specialties = ["Research", "Analysis"];
+            crew_data.encounter_bonuses = {
+                research: 35,
+                analysis: 30,
+                alien_tech: 25
+            };
+            break;
+            
+        default:
+            crew_data.specialties = ["General Operations"];
+            crew_data.encounter_bonuses = {};
+            break;
+    }
+    
+    return crew_data;
+}
+
+function get_crew_names(crew_type) {
+    switch (crew_type) {
+        case "Engineer":
+            return ["Chief Torres", "Lt. LaForge", "Eng. Scotty", "Tech O'Brien", "Mech Tucker"];
+        case "Navigator":
+            return ["Lt. Singh", "Nav. Chen", "Pilot Wash", "Com. Sulu", "Lt. Paris"];
+        case "Gunner":
+            return ["Sgt. Rodriguez", "Lt. Worf", "Gun. Jayne", "Sec. Tuvok", "Lt. Reed"];
+        case "Medic":
+            return ["Dr. McCoy", "Med. Crusher", "Doc Holiday", "Dr. Bashir", "Med. Phlox"];
+        case "Scientist":
+            return ["Dr. Spock", "Sci. Data", "Dr. McKay", "Lt. Jadzia", "Ens. Sato"];
+        default:
+            return ["Crew Member"];
+    }
+}
+
+// Planet Encounter System
+function generate_planet_encounter(planet_data, selected_crew) {
+    var encounter = {
+        title: "",
+        description: "",
+        stage: 0, // Current encounter stage
+        stages: [], // Array of encounter stages
+        outcomes: [], // Possible outcomes based on choices
+        planet_type: planet_data.type_id,
+        hostility_level: irandom(3), // 0=peaceful, 1=cautious, 2=hostile, 3=dangerous
+        selected_crew: selected_crew
+    };
+    
+    // Generate encounter based on planet type
+    switch (planet_data.type_id) {
+        case PLANET_DESERT:
+            encounter = generate_desert_encounter(encounter);
+            break;
+        case PLANET_FOREST:
+            encounter = generate_forest_encounter(encounter);
+            break;
+        default:
+            encounter = generate_generic_encounter(encounter);
+            break;
+    }
+    
+    // Filter all stages to only include available choices
+    encounter = filter_encounter_choices(encounter, selected_crew);
+    
+    return encounter;
+}
+
+// Filter encounter choices to only show options for available crew
+function filter_encounter_choices(encounter, selected_crew) {
+    // Build list of available crew types
+    var available_crew_types = [];
+    for (var i = 0; i < array_length(selected_crew); i++) {
+        array_push(available_crew_types, selected_crew[i].type);
+    }
+    
+    // Filter each stage's choices
+    for (var s = 0; s < array_length(encounter.stages); s++) {
+        var stage = encounter.stages[s];
+        var filtered_choices = [];
+        
+        for (var c = 0; c < array_length(stage.choices); c++) {
+            var choice = stage.choices[c];
+            var crew_required = choice.crew_bonus;
+            
+            // Always include "none" choices (no crew bonus required)
+            if (crew_required == "none") {
+                array_push(filtered_choices, choice);
+                continue;
+            }
+            
+            // Include choice only if required crew type is available
+            var crew_available = false;
+            for (var t = 0; t < array_length(available_crew_types); t++) {
+                if (available_crew_types[t] == crew_required) {
+                    crew_available = true;
+                    break;
+                }
+            }
+            
+            if (crew_available) {
+                array_push(filtered_choices, choice);
+            }
+        }
+        
+        // Update stage with filtered choices
+        stage.choices = filtered_choices;
+        
+        show_debug_message("Stage " + string(s + 1) + ": " + string(array_length(filtered_choices)) + " choices available");
+    }
+    
+    return encounter;
+}
+
+function generate_desert_encounter(encounter) {
+    var templates = [
+        {
+            title: "Ancient Ruins Discovery",
+            description: "Your team discovers weathered stone structures partially buried in the desert sand. Strange energy readings emanate from within.",
+            stages: [
+                {
+                    question: "How do you approach the ruins?",
+                    choices: [
+                        { text: "Send Engineer to scan the energy source", crew_bonus: "Engineer", bonus_type: "tech_problems", difficulty: 60 },
+                        { text: "Have Navigator chart safe entry routes", crew_bonus: "Navigator", bonus_type: "path_finding", difficulty: 70 },
+                        { text: "Proceed cautiously without equipment", crew_bonus: "none", bonus_type: "", difficulty: 85 }
+                    ]
+                },
+                {
+                    question: "Inside, you find an active alien console. What's your next move?",
+                    choices: [
+                        { text: "Engineer attempts to interface with it", crew_bonus: "Engineer", bonus_type: "alien_tech", difficulty: 50 },
+                        { text: "Scientist analyzes the technology first", crew_bonus: "Scientist", bonus_type: "research", difficulty: 40 },
+                        { text: "Retreat and report the discovery", crew_bonus: "none", bonus_type: "", difficulty: 20 }
+                    ]
+                }
+            ]
+        },
+        {
+            title: "Sandstorm Emergency",
+            description: "A massive sandstorm suddenly engulfs your landing party. Visibility drops to zero and equipment begins to malfunction.",
+            stages: [
+                {
+                    question: "The storm is intensifying. How do you ensure survival?",
+                    choices: [
+                        { text: "Navigator uses instruments to find shelter", crew_bonus: "Navigator", bonus_type: "navigation", difficulty: 55 },
+                        { text: "Engineer rigs emergency beacon", crew_bonus: "Engineer", bonus_type: "tech_problems", difficulty: 65 },
+                        { text: "Find natural cover and wait it out", crew_bonus: "none", bonus_type: "", difficulty: 80 }
+                    ]
+                }
+            ]
+        },
+        {
+            title: "Crashed Ship Investigation",
+            description: "You discover the wreckage of an unknown vessel half-buried in a sand dune. The hull appears to be of alien origin.",
+            stages: [
+                {
+                    question: "How do you investigate the wreckage?",
+                    choices: [
+                        { text: "Engineer examines the propulsion system", crew_bonus: "Engineer", bonus_type: "machinery", difficulty: 45 },
+                        { text: "Scientist studies the alien materials", crew_bonus: "Scientist", bonus_type: "analysis", difficulty: 50 },
+                        { text: "Search for survivors or cargo", crew_bonus: "none", bonus_type: "", difficulty: 75 }
+                    ]
+                }
+            ]
+        }
+    ];
+    
+    var selected_template = templates[irandom(array_length(templates) - 1)];
+    encounter.title = selected_template.title;
+    encounter.description = selected_template.description;
+    encounter.stages = selected_template.stages;
+    
+    return encounter;
+}
+
+function generate_forest_encounter(encounter) {
+    var templates = [
+        {
+            title: "Wildlife Sanctuary",
+            description: "Your team enters a clearing where exotic alien creatures graze peacefully. Some appear intelligent and watch you with curious eyes.",
+            stages: [
+                {
+                    question: "How do you approach these potentially intelligent beings?",
+                    choices: [
+                        { text: "Scientist attempts peaceful communication", crew_bonus: "Scientist", bonus_type: "biology", difficulty: 35 },
+                        { text: "Medic assesses their physiology from distance", crew_bonus: "Medic", bonus_type: "medical", difficulty: 50 },
+                        { text: "Maintain distance and observe behavior", crew_bonus: "none", bonus_type: "", difficulty: 70 }
+                    ]
+                },
+                {
+                    question: "One creature approaches and seems to be offering something. What do you do?",
+                    choices: [
+                        { text: "Accept the offering carefully", crew_bonus: "Medic", bonus_type: "biology", difficulty: 45 },
+                        { text: "Gunner provides security while others interact", crew_bonus: "Gunner", bonus_type: "security", difficulty: 60 },
+                        { text: "Politely decline and withdraw", crew_bonus: "none", bonus_type: "", difficulty: 30 }
+                    ]
+                }
+            ]
+        },
+        {
+            title: "Overgrown Research Station",
+            description: "Vines and massive trees have reclaimed what was once a scientific outpost. Power cores still glow faintly through the vegetation.",
+            stages: [
+                {
+                    question: "How do you access the overgrown facility?",
+                    choices: [
+                        { text: "Engineer attempts to restore power systems", crew_bonus: "Engineer", bonus_type: "repairs", difficulty: 55 },
+                        { text: "Navigator finds safe passage through debris", crew_bonus: "Navigator", bonus_type: "path_finding", difficulty: 60 },
+                        { text: "Cut through vegetation carefully", crew_bonus: "none", bonus_type: "", difficulty: 85 }
+                    ]
+                },
+                {
+                    question: "You discover active research logs. What's your priority?",
+                    choices: [
+                        { text: "Scientist analyzes the research data", crew_bonus: "Scientist", bonus_type: "research", difficulty: 30 },
+                        { text: "Engineer salvages the equipment", crew_bonus: "Engineer", bonus_type: "machinery", difficulty: 50 },
+                        { text: "Medic checks for biological contamination", crew_bonus: "Medic", bonus_type: "biology", difficulty: 40 }
+                    ]
+                }
+            ]
+        },
+        {
+            title: "Toxic Plant Encounter",
+            description: "Colorful but menacing plants block your path forward. Some crew members report mild dizziness from the spores in the air.",
+            stages: [
+                {
+                    question: "The spores are affecting your team. How do you proceed?",
+                    choices: [
+                        { text: "Medic provides immediate treatment", crew_bonus: "Medic", bonus_type: "medical", difficulty: 40 },
+                        { text: "Engineer rigs air filtration system", crew_bonus: "Engineer", bonus_type: "tech_problems", difficulty: 65 },
+                        { text: "Push through quickly before effects worsen", crew_bonus: "none", bonus_type: "", difficulty: 90 }
+                    ]
+                }
+            ]
+        }
+    ];
+    
+    var selected_template = templates[irandom(array_length(templates) - 1)];
+    encounter.title = selected_template.title;
+    encounter.description = selected_template.description;
+    encounter.stages = selected_template.stages;
+    
+    return encounter;
+}
+
+function generate_generic_encounter(encounter) {
+    encounter.title = "Unknown Planet Survey";
+    encounter.description = "Your team conducts a standard survey of this unexplored world.";
+    encounter.stages = [
+        {
+            question: "How do you approach the survey?",
+            choices: [
+                { text: "Systematic scientific approach", crew_bonus: "Scientist", bonus_type: "research", difficulty: 50 },
+                { text: "Quick resource scan", crew_bonus: "Engineer", bonus_type: "analysis", difficulty: 60 },
+                { text: "Basic visual survey", crew_bonus: "none", bonus_type: "", difficulty: 80 }
+            ]
+        }
+    ];
+    
+    return encounter;
+}
+
+// Encounter Resolution System
+function resolve_encounter_choice(encounter, stage_index, choice_index, selected_crew) {
+    if (stage_index >= array_length(encounter.stages)) {
+        show_debug_message("Warning: Invalid stage index in encounter resolution");
+        return { success: false, message: "Invalid encounter stage" };
+    }
+    
+    var stage = encounter.stages[stage_index];
+    if (choice_index >= array_length(stage.choices)) {
+        show_debug_message("Warning: Invalid choice index in encounter resolution");
+        return { success: false, message: "Invalid choice" };
+    }
+    
+    var choice = stage.choices[choice_index];
+    var base_difficulty = choice.difficulty;
+    var final_difficulty = base_difficulty;
+    
+    // Apply crew bonuses
+    var crew_bonus = 0;
+    if (choice.crew_bonus != "none" && choice.bonus_type != "") {
+        for (var i = 0; i < array_length(selected_crew); i++) {
+            var crew_member = selected_crew[i];
+            if (crew_member.type == choice.crew_bonus) {
+                if (variable_struct_exists(crew_member.encounter_bonuses, choice.bonus_type)) {
+                    crew_bonus += crew_member.encounter_bonuses[$ choice.bonus_type];
+                    show_debug_message(crew_member.name + " (" + crew_member.type + ") provides +" + string(crew_member.encounter_bonuses[$ choice.bonus_type]) + "% to " + choice.bonus_type);
+                }
+            }
+        }
+    }
+    
+    final_difficulty = max(5, base_difficulty - crew_bonus); // Minimum 5% failure chance
+    
+    // Roll for success (lower roll = success)
+    var roll = irandom(99) + 1; // 1-100
+    var success = roll <= (100 - final_difficulty);
+    
+    var result = {
+        success: success,
+        roll: roll,
+        difficulty: final_difficulty,
+        crew_bonus: crew_bonus,
+        choice_text: choice.text,
+        stage_index: stage_index,
+        choice_index: choice_index
+    };
+    
+    show_debug_message("Encounter resolution: Roll " + string(roll) + " vs difficulty " + string(final_difficulty) + " = " + (success ? "SUCCESS" : "FAILURE"));
+    
+    return result;
+}
+
+// Calculate encounter rewards based on success/failure and encounter type
+function calculate_encounter_rewards(encounter, resolution_results, planet_data) {
+    var rewards = {
+        resources: { fuel: 0, materials: 0, intel: 0, crew: 0 },
+        crew_changes: [],
+        ship_healing: 0,
+        experience_gained: 0,
+        message: ""
+    };
+    
+    var total_successes = 0;
+    var total_failures = 0;
+    
+    // Count successes and failures
+    for (var i = 0; i < array_length(resolution_results); i++) {
+        if (resolution_results[i].success) {
+            total_successes++;
+        } else {
+            total_failures++;
+        }
+    }
+    
+    var success_ratio = total_successes / array_length(resolution_results);
+    
+    // Base reward calculation based on planet level and success ratio
+    var base_reward = planet_data.level;
+    var reward_multiplier = 1.0 + (success_ratio * 0.5); // Up to 50% bonus for perfect success
+    
+    // Encounter type specific rewards
+    switch (encounter.planet_type) {
+        case PLANET_DESERT:
+            if (success_ratio >= 0.5) {
+                rewards.resources.materials = floor(base_reward * reward_multiplier);
+                if (success_ratio == 1.0) {
+                    rewards.resources.intel = 1;
+                    rewards.message = "Your team successfully navigates the desert challenges and discovers valuable materials and ancient data.";
+                } else {
+                    rewards.message = "Despite some setbacks, your team recovers useful materials from the desert.";
+                }
+            } else {
+                rewards.ship_healing = -1; // Equipment damage from harsh conditions
+                rewards.message = "The harsh desert conditions damage your equipment and exhaust your crew.";
+            }
+            break;
+            
+        case PLANET_FOREST:
+            if (success_ratio >= 0.5) {
+                rewards.resources.fuel = floor(base_reward * reward_multiplier);
+                if (success_ratio == 1.0) {
+                    // Chance to recruit local wildlife expert as crew
+                    if (irandom(100) < 30) {
+                        var new_crew = {
+                            type: "recruit",
+                            name: "Forest Guide",
+                            source: "planet_encounter"
+                        };
+                        array_push(rewards.crew_changes, new_crew);
+                        rewards.message = "Your diplomatic approach pays off! The forest dwellers share their resources and one of them joins your crew.";
+                    } else {
+                        rewards.message = "Your respectful approach to the forest ecosystem yields valuable organic resources.";
+                    }
+                } else {
+                    rewards.message = "Your crew manages to gather some resources despite encountering difficulties.";
+                }
+            } else {
+                // Crew injury from hostile wildlife/toxins
+                for (var j = 0; j < array_length(encounter.selected_crew); j++) {
+                    if (irandom(100) < 50) {
+                        var crew_injury = {
+                            type: "injury",
+                            crew_index: j,
+                            health_loss: 10 + irandom(20)
+                        };
+                        array_push(rewards.crew_changes, crew_injury);
+                    }
+                }
+                rewards.message = "Your crew suffers injuries from the hostile forest environment.";
+            }
+            break;
+            
+        default:
+            // Generic encounter rewards
+            if (success_ratio >= 0.5) {
+                rewards.resources.materials = floor(base_reward * 0.5);
+                rewards.resources.fuel = floor(base_reward * 0.5);
+                rewards.message = "Your survey mission yields modest resources.";
+            } else {
+                rewards.message = "The survey mission encounters unexpected difficulties.";
+            }
+            break;
+    }
+    
+    // Experience for all crew members who participated
+    rewards.experience_gained = floor(5 * (1 + success_ratio));
+    
+    return rewards;
+}
+
+// Apply encounter rewards to player and crew
+function apply_encounter_rewards(rewards) {
+    var player = instance_find(obj_player, 0);
+    if (player == noone) {
+        show_debug_message("Warning: No player found to apply rewards to");
+        return;
+    }
+    
+    // Apply ship healing/damage
+    if (rewards.ship_healing != 0) {
+        var old_hp = player.hp;
+        if (rewards.ship_healing > 0) {
+            player.hp = min(player.hp + rewards.ship_healing, player.hp_max);
+            show_debug_message("Ship healed: " + string(old_hp) + " -> " + string(player.hp));
+        } else {
+            player.hp = max(1, player.hp + rewards.ship_healing);
+            show_debug_message("Ship damaged: " + string(old_hp) + " -> " + string(player.hp));
+        }
+    }
+    
+    // Apply crew changes (injuries, new recruits)
+    for (var i = 0; i < array_length(rewards.crew_changes); i++) {
+        var crew_change = rewards.crew_changes[i];
+        
+        if (crew_change.type == "injury" && crew_change.crew_index < array_length(player.crew_roster)) {
+            var crew_member = player.crew_roster[crew_change.crew_index];
+            var old_health = crew_member.health;
+            crew_member.health = max(0, crew_member.health - crew_change.health_loss);
+            show_debug_message(crew_member.name + " injured: " + string(old_health) + "% -> " + string(crew_member.health) + "% health");
+        } else if (crew_change.type == "recruit") {
+            // Add new crew member
+            var new_crew = create_crew_member("Scientist", crew_change.name); // Forest guides are scientists
+            player.add_crew_member_direct(new_crew);
+            show_debug_message("New crew member recruited: " + crew_change.name);
+        }
+    }
+    
+    // Apply experience to selected crew
+    if (variable_struct_exists(player, "selected_crew")) {
+        for (var j = 0; j < array_length(player.selected_crew); j++) {
+            var crew_index = player.selected_crew[j];
+            if (crew_index < array_length(player.crew_roster)) {
+                player.crew_roster[crew_index].experience += rewards.experience_gained;
+                show_debug_message(player.crew_roster[crew_index].name + " gained " + string(rewards.experience_gained) + " experience");
+            }
+        }
+    }
+    
+    // Log resource gains (these would be stored in global variables or player inventory)
+    var resource_names = struct_get_names(rewards.resources);
+    for (var k = 0; k < array_length(resource_names); k++) {
+        var resource_name = resource_names[k];
+        var amount = rewards.resources[$ resource_name];
+        if (amount > 0) {
+            show_debug_message("Gained " + string(amount) + " " + resource_name);
+        }
+    }
+    
+    show_debug_message("Encounter rewards applied: " + rewards.message);
+    
+    // Mark planet as visited
+    if (variable_global_exists("current_planet_instance") && global.current_planet_instance != noone) {
+        var planet_obj = global.current_planet_instance;
+        if (instance_exists(planet_obj)) {
+            // Initialize visited flag if it doesn't exist (for existing planets)
+            if (!variable_instance_exists(planet_obj, "visited")) {
+                planet_obj.visited = false;
+                show_debug_message("Initialized visited flag for existing planet");
+            }
+            
+            // Set visited flag and track which level this visit occurred on
+            planet_obj.visited = true;
+            planet_obj.visited_level = global.current_level;
+            show_debug_message("Planet marked as visited for level " + string(global.current_level) + " - no more encounters available this level");
+        }
     }
 }

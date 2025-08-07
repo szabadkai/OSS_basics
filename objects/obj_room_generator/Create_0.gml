@@ -169,6 +169,8 @@ spawn_planet = function(occupied_positions) {
                 global.current_planet = {
                     data: planet_data
                 };
+                // Also store the planet instance for visit tracking
+                global.current_planet_instance = planet;
             }
             
             planet_spawned = true;
@@ -220,6 +222,11 @@ spawn_planet = function(occupied_positions) {
                         with(planet) {
                             level = global.current_level;
                             image_index = level;
+                            // Store planet instance for visit tracking
+                            global.current_planet_instance = planet;
+                            global.current_planet = {
+                                data: planet_data
+                            };
                         }
                         
                         show_debug_message("Fallback: Spawned planet (level " + string(global.current_level) + ") adjacent to player at grid(" + string(fb_x) + ", " + string(fb_y) + ")");

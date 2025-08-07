@@ -1,429 +1,92 @@
 {
-    "$GMProject": "v1",
-    "%Name": "RougueLikeOpera",
-    "AudioGroups": [
-        {
-            "$GMAudioGroup": "",
-            "%Name": "audiogroup_default",
-            "name": "audiogroup_default",
-            "resourceType": "GMAudioGroup",
-            "resourceVersion": "2.0",
-            "targets": -1
-        },
-        {
-            "$GMAudioGroup": "",
-            "%Name": "Music",
-            "name": "Music",
-            "resourceType": "GMAudioGroup",
-            "resourceVersion": "2.0",
-            "targets": -1
-        },
-        {
-            "$GMAudioGroup": "",
-            "%Name": "audiogroup1",
-            "name": "audiogroup1",
-            "resourceType": "GMAudioGroup",
-            "resourceVersion": "2.0",
-            "targets": -1
-        }
-    ],
-    "configs": {
-        "children": [],
-        "name": "Default"
-    },
-    "defaultScriptType": 1,
-    "Folders": [
-        {
-            "$GMFolder": "",
-            "%Name": "Animation Curves",
-            "folderPath": "folders/Animation Curves.yy",
-            "name": "Animation Curves",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Extensions",
-            "folderPath": "folders/Extensions.yy",
-            "name": "Extensions",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Fonts",
-            "folderPath": "folders/Fonts.yy",
-            "name": "Fonts",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Notes",
-            "folderPath": "folders/Notes.yy",
-            "name": "Notes",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Objects",
-            "folderPath": "folders/Objects.yy",
-            "name": "Objects",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "planet_map",
-            "folderPath": "folders/Objects/planet_map.yy",
-            "name": "planet_map",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "space_rouglite",
-            "folderPath": "folders/Objects/space_rouglite.yy",
-            "name": "space_rouglite",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Particle Systems",
-            "folderPath": "folders/Particle Systems.yy",
-            "name": "Particle Systems",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Paths",
-            "folderPath": "folders/Paths.yy",
-            "name": "Paths",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Rooms",
-            "folderPath": "folders/Rooms.yy",
-            "name": "Rooms",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Scripts",
-            "folderPath": "folders/Scripts.yy",
-            "name": "Scripts",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Sequences",
-            "folderPath": "folders/Sequences.yy",
-            "name": "Sequences",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Shaders",
-            "folderPath": "folders/Shaders.yy",
-            "name": "Shaders",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Sounds",
-            "folderPath": "folders/Sounds.yy",
-            "name": "Sounds",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Sprites",
-            "folderPath": "folders/Sprites.yy",
-            "name": "Sprites",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "space_ships",
-            "folderPath": "folders/Sprites/space_ships.yy",
-            "name": "space_ships",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Tile Sets",
-            "folderPath": "folders/Tile Sets.yy",
-            "name": "Tile Sets",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        },
-        {
-            "$GMFolder": "",
-            "%Name": "Timelines",
-            "folderPath": "folders/Timelines.yy",
-            "name": "Timelines",
-            "resourceType": "GMFolder",
-            "resourceVersion": "2.0"
-        }
-    ],
-    "ForcedPrefabProjectReferences": [],
-    "IncludedFiles": [],
-    "isEcma": false,
-    "LibraryEmitters": [],
-    "MetaData": {
-        "IDEVersion": "2024.13.1.193"
-    },
-    "name": "RougueLikeOpera",
-    "resources": [
-        {
-            "id": {
-                "name": "___backto",
-                "path": "objects/___backto/___backto.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_asteroid",
-                "path": "objects/obj_asteroid/obj_asteroid.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_damage_text",
-                "path": "objects/obj_damage_text/obj_damage_text.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_enemy_fighter",
-                "path": "objects/obj_enemy_fighter/obj_enemy_fighter.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_enemy_heavy",
-                "path": "objects/obj_enemy_heavy/obj_enemy_heavy.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_enemy",
-                "path": "objects/obj_enemy/obj_enemy.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_planet",
-                "path": "objects/obj_planet/obj_planet.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_player",
-                "path": "objects/obj_player/obj_player.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_projectile",
-                "path": "objects/obj_projectile/obj_projectile.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_room_generator",
-                "path": "objects/obj_room_generator/obj_room_generator.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_tilesetter",
-                "path": "objects/obj_tilesetter/obj_tilesetter.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_turn_manager",
-                "path": "objects/obj_turn_manager/obj_turn_manager.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_ui_manager",
-                "path": "objects/obj_ui_manager/obj_ui_manager.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "rm_planet_map",
-                "path": "rooms/rm_planet_map/rm_planet_map.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "rm_space_rouglite",
-                "path": "rooms/rm_space_rouglite/rm_space_rouglite.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "autotile_functions",
-                "path": "scripts/autotile_functions/autotile_functions.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "movement_functions",
-                "path": "scripts/movement_functions/movement_functions.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "planet_system",
-                "path": "scripts/planet_system/planet_system.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "upgrade_system",
-                "path": "scripts/upgrade_system/upgrade_system.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "obj_thruster_effect",
-                "path": "objects/obj_thruster_effect/obj_thruster_effect.yy"
-            }
-        },
-        { "id": { "name": "Sound1", "path": "sounds/Sound1/Sound1.yy" } },
-        { "id": { "name": "Sound2", "path": "sounds/Sound2/Sound2.yy" } },
-        { "id": { "name": "Sound3", "path": "sounds/Sound3/Sound3.yy" } },
-        { "id": { "name": "Sound4", "path": "sounds/Sound4/Sound4.yy" } },
-        {
-            "id": {
-                "name": "_1f6b963f_1ebb_42cb_b826_7836f6b122e9",
-                "path": "sprites/_1f6b963f_1ebb_42cb_b826_7836f6b122e9/_1f6b963f_1ebb_42cb_b826_7836f6b122e9.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "complete_tileset_example__2_",
-                "path": "sprites/complete_tileset_example__2_/complete_tileset_example__2_.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_1_black512_1_1000",
-                "path": "sprites/spr_1_black512_1_1000/spr_1_black512_1_1000.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_2_black512_1_500",
-                "path": "sprites/spr_2_black512_1_500/spr_2_black512_1_500.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_3_black512_1_250",
-                "path": "sprites/spr_3_black512_1_250/spr_3_black512_1_250.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_grid64",
-                "path": "sprites/spr_grid64/spr_grid64.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_planet_0002",
-                "path": "sprites/spr_planet_0002/spr_planet_0002.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_ship_player_v5",
-                "path": "sprites/spr_ship_player_v5/spr_ship_player_v5.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_ship_ufo",
-                "path": "sprites/spr_ship_ufo/spr_ship_ufo.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "spr_stars_purple_50_512",
-                "path": "sprites/spr_stars_purple_50_512/spr_stars_purple_50_512.yy"
-            }
-        },
-        {
-            "id": { "name": "Sprite10", "path": "sprites/Sprite10/Sprite10.yy" }
-        },
-        {
-            "id": { "name": "Sprite12", "path": "sprites/Sprite12/Sprite12.yy" }
-        },
-        {
-            "id": {
-                "name": "PlanetTiles",
-                "path": "tilesets/PlanetTiles/PlanetTiles.yy"
-            }
-        },
-        {
-            "id": {
-                "name": "TileSet1",
-                "path": "tilesets/TileSet1/TileSet1.yy"
-            }
-        }
-    ],
-    "resourceType": "GMProject",
-    "resourceVersion": "2.0",
-    "RoomOrderNodes": [
-        {
-            "roomId": {
-                "name": "rm_space_rouglite",
-                "path": "rooms/rm_space_rouglite/rm_space_rouglite.yy"
-            }
-        },
-        {
-            "roomId": {
-                "name": "rm_planet_map",
-                "path": "rooms/rm_planet_map/rm_planet_map.yy"
-            }
-        }
-    ],
-    "templateType": "game",
-    "TextureGroups": [
-        {
-            "$GMTextureGroup": "",
-            "%Name": "Default",
-            "autocrop": true,
-            "border": 2,
-            "compressFormat": "bz2",
-            "customOptions": "",
-            "directory": "",
-            "groupParent": null,
-            "isScaled": true,
-            "loadType": "default",
-            "mipsToGenerate": 0,
-            "name": "Default",
-            "resourceType": "GMTextureGroup",
-            "resourceVersion": "2.0",
-            "targets": -1
-        }
-    ]
+  "$GMProject":"v1",
+  "%Name":"RougueLikeOpera",
+  "AudioGroups":[
+    {"$GMAudioGroup":"","%Name":"audiogroup_default","name":"audiogroup_default","resourceType":"GMAudioGroup","resourceVersion":"2.0","targets":-1,},
+    {"$GMAudioGroup":"","%Name":"Music","name":"Music","resourceType":"GMAudioGroup","resourceVersion":"2.0","targets":-1,},
+    {"$GMAudioGroup":"","%Name":"audiogroup1","name":"audiogroup1","resourceType":"GMAudioGroup","resourceVersion":"2.0","targets":-1,},
+  ],
+  "configs":{
+    "children":[],
+    "name":"Default",
+  },
+  "defaultScriptType":1,
+  "Folders":[
+    {"$GMFolder":"","%Name":"Animation Curves","folderPath":"folders/Animation Curves.yy","name":"Animation Curves","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Extensions","folderPath":"folders/Extensions.yy","name":"Extensions","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Fonts","folderPath":"folders/Fonts.yy","name":"Fonts","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Notes","folderPath":"folders/Notes.yy","name":"Notes","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Objects","folderPath":"folders/Objects.yy","name":"Objects","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"planet_map","folderPath":"folders/Objects/planet_map.yy","name":"planet_map","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"space_rouglite","folderPath":"folders/Objects/space_rouglite.yy","name":"space_rouglite","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Particle Systems","folderPath":"folders/Particle Systems.yy","name":"Particle Systems","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Paths","folderPath":"folders/Paths.yy","name":"Paths","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Rooms","folderPath":"folders/Rooms.yy","name":"Rooms","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Scripts","folderPath":"folders/Scripts.yy","name":"Scripts","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Sequences","folderPath":"folders/Sequences.yy","name":"Sequences","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Shaders","folderPath":"folders/Shaders.yy","name":"Shaders","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Sounds","folderPath":"folders/Sounds.yy","name":"Sounds","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Sprites","folderPath":"folders/Sprites.yy","name":"Sprites","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"space_ships","folderPath":"folders/Sprites/space_ships.yy","name":"space_ships","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Tile Sets","folderPath":"folders/Tile Sets.yy","name":"Tile Sets","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Timelines","folderPath":"folders/Timelines.yy","name":"Timelines","resourceType":"GMFolder","resourceVersion":"2.0",},
+  ],
+  "ForcedPrefabProjectReferences":[],
+  "IncludedFiles":[],
+  "isEcma":false,
+  "LibraryEmitters":[],
+  "MetaData":{
+    "IDEVersion":"2024.13.1.193",
+  },
+  "name":"RougueLikeOpera",
+  "resources":[
+    {"id":{"name":"___backto","path":"objects/___backto/___backto.yy",},},
+    {"id":{"name":"obj_asteroid","path":"objects/obj_asteroid/obj_asteroid.yy",},},
+    {"id":{"name":"obj_damage_text","path":"objects/obj_damage_text/obj_damage_text.yy",},},
+    {"id":{"name":"obj_enemy_fighter","path":"objects/obj_enemy_fighter/obj_enemy_fighter.yy",},},
+    {"id":{"name":"obj_enemy_heavy","path":"objects/obj_enemy_heavy/obj_enemy_heavy.yy",},},
+    {"id":{"name":"obj_enemy","path":"objects/obj_enemy/obj_enemy.yy",},},
+    {"id":{"name":"obj_planet","path":"objects/obj_planet/obj_planet.yy",},},
+    {"id":{"name":"obj_player","path":"objects/obj_player/obj_player.yy",},},
+    {"id":{"name":"obj_projectile","path":"objects/obj_projectile/obj_projectile.yy",},},
+    {"id":{"name":"obj_room_generator","path":"objects/obj_room_generator/obj_room_generator.yy",},},
+    {"id":{"name":"obj_thruster_effect","path":"objects/obj_thruster_effect/obj_thruster_effect.yy",},},
+    {"id":{"name":"obj_tilesetter","path":"objects/obj_tilesetter/obj_tilesetter.yy",},},
+    {"id":{"name":"obj_turn_manager","path":"objects/obj_turn_manager/obj_turn_manager.yy",},},
+    {"id":{"name":"obj_ui_manager","path":"objects/obj_ui_manager/obj_ui_manager.yy",},},
+    {"id":{"name":"rm_planet_map","path":"rooms/rm_planet_map/rm_planet_map.yy",},},
+    {"id":{"name":"rm_space_rouglite","path":"rooms/rm_space_rouglite/rm_space_rouglite.yy",},},
+    {"id":{"name":"autotile_functions","path":"scripts/autotile_functions/autotile_functions.yy",},},
+    {"id":{"name":"movement_functions","path":"scripts/movement_functions/movement_functions.yy",},},
+    {"id":{"name":"planet_system","path":"scripts/planet_system/planet_system.yy",},},
+    {"id":{"name":"upgrade_system","path":"scripts/upgrade_system/upgrade_system.yy",},},
+    {"id":{"name":"Sound1","path":"sounds/Sound1/Sound1.yy",},},
+    {"id":{"name":"Sound2","path":"sounds/Sound2/Sound2.yy",},},
+    {"id":{"name":"Sound3","path":"sounds/Sound3/Sound3.yy",},},
+    {"id":{"name":"Sound4","path":"sounds/Sound4/Sound4.yy",},},
+    {"id":{"name":"_1f6b963f_1ebb_42cb_b826_7836f6b122e9","path":"sprites/_1f6b963f_1ebb_42cb_b826_7836f6b122e9/_1f6b963f_1ebb_42cb_b826_7836f6b122e9.yy",},},
+    {"id":{"name":"complete_tileset_example__2_","path":"sprites/complete_tileset_example__2_/complete_tileset_example__2_.yy",},},
+    {"id":{"name":"spr_1_black512_1_1000","path":"sprites/spr_1_black512_1_1000/spr_1_black512_1_1000.yy",},},
+    {"id":{"name":"spr_2_black512_1_500","path":"sprites/spr_2_black512_1_500/spr_2_black512_1_500.yy",},},
+    {"id":{"name":"spr_3_black512_1_250","path":"sprites/spr_3_black512_1_250/spr_3_black512_1_250.yy",},},
+    {"id":{"name":"spr_grid64","path":"sprites/spr_grid64/spr_grid64.yy",},},
+    {"id":{"name":"spr_planet_0002","path":"sprites/spr_planet_0002/spr_planet_0002.yy",},},
+    {"id":{"name":"spr_ship_player_v5","path":"sprites/spr_ship_player_v5/spr_ship_player_v5.yy",},},
+    {"id":{"name":"spr_ship_ufo","path":"sprites/spr_ship_ufo/spr_ship_ufo.yy",},},
+    {"id":{"name":"spr_stars_purple_50_512","path":"sprites/spr_stars_purple_50_512/spr_stars_purple_50_512.yy",},},
+    {"id":{"name":"Sprite10","path":"sprites/Sprite10/Sprite10.yy",},},
+    {"id":{"name":"Sprite12","path":"sprites/Sprite12/Sprite12.yy",},},
+    {"id":{"name":"PlanetTiles","path":"tilesets/PlanetTiles/PlanetTiles.yy",},},
+    {"id":{"name":"TileSet1","path":"tilesets/TileSet1/TileSet1.yy",},},
+  ],
+  "resourceType":"GMProject",
+  "resourceVersion":"2.0",
+  "RoomOrderNodes":[
+    {"roomId":{"name":"rm_space_rouglite","path":"rooms/rm_space_rouglite/rm_space_rouglite.yy",},},
+    {"roomId":{"name":"rm_planet_map","path":"rooms/rm_planet_map/rm_planet_map.yy",},},
+  ],
+  "templateType":"game",
+  "TextureGroups":[
+    {"$GMTextureGroup":"","%Name":"Default","autocrop":true,"border":2,"compressFormat":"bz2","customOptions":"","directory":"","groupParent":null,"isScaled":true,"loadType":"default","mipsToGenerate":0,"name":"Default","resourceType":"GMTextureGroup","resourceVersion":"2.0","targets":-1,},
+  ],
 }
